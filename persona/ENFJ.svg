@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img">
+  <defs>
+    <radialGradient id="shine" cx="35%" cy="28%" r="65%">
+      <stop offset="0%" stop-color="#fff" stop-opacity="0.22"/>
+      <stop offset="55%" stop-color="#fff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <g>
+    <rect width="128" height="128" fill="#6ee7a8"/>
+    <rect width="128" height="128" fill="url(#shine)"/>
+    
+  <ellipse cx="64" cy="118" rx="42" ry="28" fill="#1e4030"/>
+  <ellipse cx="64" cy="56" rx="28" ry="32" fill="#f0c9a8"/>
+  <!-- short neat hair -->
+  <path d="M36,52 Q34,24 64,22 Q94,24 92,52 L86,48 Q64,34 42,48 Z" fill="#2d4a38"/>
+  
+      <path d="M42,47 L58,45" stroke="#1a1520" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+      <path d="M70,45 L86,47" stroke="#1a1520" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+    
+  
+        <circle cx="48" cy="55" r="3.2" fill="#1a1520"/>
+        <circle cx="80" cy="55" r="3.2" fill="#1a1520"/>
+        <circle cx="47" cy="54" r="1" fill="#fff" opacity="0.7"/>
+        <circle cx="79" cy="54" r="1" fill="#fff" opacity="0.7"/>
+        
+  <path d="M50,70 Q64,82 78,70" stroke="#1a1520" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+  <!-- big sword behind -->
+  <g transform="translate(100,55) rotate(25)">
+    <rect x="-3" y="-28" width="6" height="40" rx="1" fill="#e2e8f0" stroke="#1a1520" stroke-width="1"/>
+    <polygon points="0,-36 -5,-26 5,-26" fill="#cbd5e1"/>
+    <rect x="-8" y="10" width="16" height="5" rx="1" fill="#fcd34d" stroke="#1a1520" stroke-width="1"/>
+    <rect x="-2.5" y="15" width="5" height="14" rx="1" fill="#78350f"/>
+  </g>
+  <!-- cape hint -->
+  <path d="M28,105 Q40,95 50,108" fill="none" stroke="#34d399" stroke-width="4" opacity="0.6"/>
+
+  </g>
+</svg>

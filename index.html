@@ -1,0 +1,1788 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>心情片单</title>
+<style>
+  :root {
+    --bg0: #0b0b0f;
+    --bg1: #14141a;
+    --bg2: #1c1c24;
+    --surface: rgba(255,255,255,0.06);
+    --surface-hover: rgba(255,255,255,0.1);
+    --border: rgba(255,255,255,0.1);
+    --text: #f2f2f5;
+    --muted: #a8a8b5;
+    --muted2: #6e6e7a;
+    --accent: #c4a090;
+    --accent-soft: rgba(196,160,144,0.42);
+    --accent-glow: rgba(196,160,144,0.58);
+    --cta: #c4a090;
+    --cta-text: #1a1210;
+    --persona-bg: transparent;
+    --grad-a: #2a1c22;
+    --grad-b: #0b0b0f;
+    --mood-mid: rgba(196,160,144,0.18);
+    --persona-tint: transparent;
+    --persona-glow: transparent;
+    --radius: 14px;
+    --shadow: 0 12px 40px rgba(0,0,0,0.45);
+    --font: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", system-ui, sans-serif;
+    --ease-mood: 0.5s ease;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: var(--font);
+    background: var(--bg0);
+    color: var(--text);
+    min-height: 100vh;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    transition: background-color var(--ease-mood);
+  }
+
+  /* mood-driven ambient backdrop + optional MBTI persona tint
+     Washes intentionally strong so mood switches read clearly on Netflix dark base */
+  .ambient {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background:
+      radial-gradient(ellipse 95% 70% at 50% -8%, var(--accent-glow), transparent 58%),
+      radial-gradient(ellipse 70% 50% at 8% 88%, var(--mood-mid), transparent 62%),
+      radial-gradient(ellipse 55% 45% at 92% 18%, var(--accent-soft), transparent 55%),
+      radial-gradient(ellipse 45% 35% at 12% 55%, var(--persona-tint), transparent 55%),
+      radial-gradient(ellipse 60% 50% at 88% 78%, var(--grad-a), transparent 58%),
+      linear-gradient(180deg, var(--grad-a) 0%, var(--grad-b) 42%, var(--bg0) 100%);
+    transition: background var(--ease-mood), opacity 0.45s ease, transform 0.5s ease;
+    opacity: 1;
+    transform: scale(1);
+  }
+  .ambient.pulse {
+    opacity: 0.78;
+    transform: scale(1.018);
+  }
+  .ambient::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 100% 55% at 50% 100%, var(--accent-glow), transparent 70%),
+      radial-gradient(ellipse 80% 40% at 50% 0%, var(--mood-mid), transparent 65%);
+    opacity: 0.85;
+    transition: opacity var(--ease-mood), background var(--ease-mood);
+    pointer-events: none;
+  }
+  .ambient::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 42% 34% at 86% 72%, var(--persona-glow), transparent 62%),
+      linear-gradient(180deg, transparent 55%, rgba(0,0,0,0.35) 100%);
+    opacity: var(--persona-opacity, 0.35);
+    transition: opacity 0.55s ease, background var(--ease-mood);
+    pointer-events: none;
+  }
+
+  .shell {
+    position: relative;
+    z-index: 1;
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 0 24px 80px;
+  }
+
+  /* ===== Top nav ===== */
+  .nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 22px 0 8px;
+    gap: 16px;
+  }
+  .nav-brand {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .nav-brand strong {
+    font-size: 1.15rem;
+    letter-spacing: 0.02em;
+    font-weight: 700;
+  }
+  .nav-brand span {
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+  .nav-pill {
+    font-size: 0.75rem;
+    color: var(--muted);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 6px 12px;
+    border-radius: 999px;
+    white-space: nowrap;
+    transition: border-color var(--ease-mood), background var(--ease-mood), color var(--ease-mood);
+  }
+  .nav-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+  /* MBTI 形象：圆形头像 + 社区昵称（未选不显示，选中淡入） */
+  .persona-avatar {
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+    background: var(--persona-bg, rgba(0,0,0,0.35));
+    border: 1.5px solid rgba(255,255,255,0.22);
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.2);
+    transition: opacity 0.45s ease, transform 0.45s ease, border-color 0.45s ease;
+  }
+  .persona-avatar.sm { width: 22px; height: 22px; }
+  .persona-avatar.md { width: 36px; height: 36px; }
+  .persona-avatar.lg { width: 44px; height: 44px; }
+  .persona-avatar.chip-av {
+    width: 28px; height: 28px;
+    border-width: 1.5px;
+  }
+
+  .persona-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--text);
+    background: linear-gradient(105deg, var(--accent-soft), rgba(255,255,255,0.04));
+    border: 1px solid rgba(255,255,255,0.18);
+    padding: 5px 14px 5px 6px;
+    border-radius: 999px;
+    white-space: nowrap;
+    opacity: 0;
+    transform: translateY(6px);
+    animation: personaIn 0.45s ease forwards;
+    transition: border-color var(--ease-mood), background var(--ease-mood), box-shadow var(--ease-mood);
+    box-shadow: 0 0 18px var(--persona-glow);
+  }
+  @keyframes personaIn {
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .persona-badge .code { color: var(--accent); font-weight: 700; transition: color var(--ease-mood); }
+  .persona-badge .dot { color: var(--muted2); font-weight: 400; }
+  .persona-badge .label { color: var(--text); font-weight: 600; }
+
+  .hero-persona {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 16px;
+    font-size: 0.88rem;
+    color: var(--muted);
+    opacity: 0;
+    transform: translateY(8px);
+    animation: personaIn 0.5s ease forwards;
+    transition: color var(--ease-mood);
+  }
+  .hero-persona b {
+    color: var(--text);
+    font-weight: 600;
+  }
+  .hero-persona .code {
+    color: var(--accent);
+    font-weight: 700;
+    transition: color var(--ease-mood);
+  }
+
+  /* 头像 crossfade 容器 */
+  .persona-av-wrap {
+    position: relative;
+    display: inline-grid;
+    place-items: center;
+    flex-shrink: 0;
+  }
+  .persona-av-wrap .persona-avatar {
+    grid-area: 1 / 1;
+  }
+
+  /* ===== Hero ===== */
+  .hero {
+    padding: 36px 0 28px;
+    max-width: 720px;
+  }
+  .hero h1 {
+    font-size: clamp(2.1rem, 5vw, 3.4rem);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    margin-bottom: 14px;
+  }
+  .hero h1 em {
+    font-style: normal;
+    background: linear-gradient(105deg, var(--accent), #fff 70%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    transition: background var(--ease-mood);
+  }
+  .hero .lead {
+    font-size: clamp(1rem, 2.2vw, 1.2rem);
+    color: var(--muted);
+    max-width: 34em;
+  }
+  .hero .lead b { color: var(--text); font-weight: 600; }
+
+  /* ===== Panels ===== */
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: calc(var(--radius) + 4px);
+    padding: 22px 22px 20px;
+    margin-bottom: 18px;
+    backdrop-filter: blur(8px);
+    transition: border-color var(--ease-mood), box-shadow var(--ease-mood), background var(--ease-mood);
+  }
+  .lab {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--muted);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+  .lab small {
+    font-weight: 400;
+    color: var(--muted2);
+    font-size: 0.75rem;
+  }
+
+  /* Mood chips — horizontal scroll on narrow, wrap grid on wide */
+  .moods {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 10px;
+  }
+  @media (min-width: 900px) {
+    .moods { grid-template-columns: repeat(7, 1fr); }
+  }
+  .mood {
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: rgba(0,0,0,0.25);
+    border-radius: var(--radius);
+    padding: 14px 12px 12px;
+    text-align: left;
+    transition: transform 0.18s ease, border-color var(--ease-mood), background var(--ease-mood), box-shadow var(--ease-mood);
+    user-select: none;
+  }
+  .mood:hover {
+    transform: translateY(-2px);
+    background: var(--surface-hover);
+    border-color: rgba(255,255,255,0.2);
+  }
+  .mood.on {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 42%, rgba(0,0,0,0.5));
+    box-shadow:
+      0 0 0 1.5px var(--accent),
+      0 10px 32px var(--accent-glow),
+      inset 0 0 28px var(--mood-mid);
+  }
+  .mood.on .name { color: #fff; }
+  .mood.on .em { filter: saturate(1.25) brightness(1.08); }
+  @supports not (background: color-mix(in srgb, red 50%, black)) {
+    .mood.on { background: var(--accent-soft); }
+  }
+  .mood .em { font-size: 1.35rem; display: block; margin-bottom: 4px; }
+  .mood .name { font-weight: 700; font-size: 0.95rem; display: block; }
+  .mood .hint {
+    display: block;
+    font-style: normal;
+    font-size: 0.72rem;
+    color: var(--muted);
+    margin-top: 4px;
+    line-height: 1.35;
+  }
+  .mood.on .hint { color: var(--text); opacity: 0.85; }
+
+  /* Type chips */
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .chip {
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: rgba(0,0,0,0.28);
+    color: var(--text);
+    border-radius: 999px;
+    padding: 8px 14px;
+    font-size: 0.85rem;
+    transition: background var(--ease-mood), border-color var(--ease-mood), transform 0.15s, color var(--ease-mood), box-shadow var(--ease-mood);
+    user-select: none;
+  }
+  .chip:hover:not(.disabled) {
+    background: var(--surface-hover);
+    border-color: rgba(255,255,255,0.22);
+  }
+  .chip.on {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+    color: #fff;
+    font-weight: 600;
+  }
+  .chip.disabled {
+    opacity: 0.42;
+    cursor: not-allowed;
+    text-decoration: line-through;
+    text-decoration-color: rgba(255,255,255,0.35);
+  }
+  .tip {
+    margin-top: 10px;
+    font-size: 0.75rem;
+    color: var(--muted2);
+  }
+
+  /* MBTI accordion */
+  .mbti-toggle {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    cursor: pointer;
+    background: transparent;
+    border: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    padding: 0;
+  }
+  .mbti-toggle .lab { margin: 0; flex: 1; }
+  .mbti-chev {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    display: grid; place-items: center;
+    color: var(--muted);
+    font-size: 0.75rem;
+    transition: transform 0.2s;
+    flex-shrink: 0;
+  }
+  .mbti-panel.open .mbti-chev { transform: rotate(180deg); }
+  .mbti-body {
+    display: none;
+    margin-top: 14px;
+  }
+  .mbti-panel.open .mbti-body { display: block; }
+  .mbti-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+  @media (min-width: 700px) {
+    .mbti-grid { grid-template-columns: repeat(8, 1fr); }
+  }
+  .mbti-chip {
+    text-align: center;
+    padding: 8px 4px 7px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    line-height: 1.25;
+  }
+  .mbti-chip .mbti-code { font-size: 0.78rem; letter-spacing: 0.05em; }
+  .mbti-chip .mbti-persona {
+    font-size: 0.58rem;
+    font-weight: 500;
+    letter-spacing: 0;
+    color: var(--muted2);
+    opacity: 0;
+    max-height: 0;
+    overflow: hidden;
+    transition: opacity 0.35s ease, max-height 0.35s ease, color 0.35s ease;
+  }
+  .mbti-panel.open .mbti-chip .mbti-persona {
+    opacity: 0.95;
+    max-height: 1.4em;
+  }
+  .mbti-chip.on .mbti-persona { color: var(--text); opacity: 1; }
+  .mbti-chip .persona-avatar.chip-av {
+    transition: transform 0.2s ease, box-shadow 0.3s ease, border-color var(--ease-mood);
+  }
+  .mbti-chip.on .persona-avatar.chip-av {
+    transform: scale(1.08);
+    border-color: var(--accent);
+    box-shadow: 0 0 10px var(--persona-glow);
+  }
+  .mbti-note {
+    margin-top: 10px;
+    font-size: 0.74rem;
+    color: var(--muted2);
+  }
+  .mbti-selected-line {
+    margin-top: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  /* CTA */
+  .cta-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    margin: 8px 0 28px;
+  }
+  @media (min-width: 600px) {
+    .cta-wrap {
+      flex-direction: row;
+      align-items: center;
+      gap: 16px;
+    }
+  }
+  .btn {
+    appearance: none;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    font-weight: 700;
+    font-size: 1.05rem;
+    padding: 16px 28px;
+    border-radius: 999px;
+    background: var(--cta);
+    color: var(--cta-text);
+    box-shadow: 0 8px 28px var(--accent-glow);
+    transition: transform 0.15s, filter 0.15s, opacity 0.15s,
+      background var(--ease-mood), color var(--ease-mood), box-shadow var(--ease-mood);
+  }
+  .btn:hover:not(:disabled) {
+    filter: brightness(1.08);
+    transform: translateY(-1px);
+  }
+  .btn:active:not(:disabled) { transform: translateY(0); }
+  .btn:disabled,
+  .btn.dis {
+    cursor: not-allowed;
+    background: #3a3a44;
+    color: #c8c8d0;
+    box-shadow: none;
+    opacity: 1;
+    border: 1px solid #555560;
+  }
+  .btn.ghost {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border);
+    box-shadow: none;
+    font-weight: 600;
+  }
+  .btn.ghost:hover {
+    background: var(--surface-hover);
+    filter: none;
+  }
+  .btn.sm {
+    font-size: 0.9rem;
+    padding: 12px 20px;
+  }
+  .btnhint {
+    font-size: 0.82rem;
+    color: var(--muted);
+  }
+
+  /* ===== Result ===== */
+  .result-banner {
+    position: relative;
+    border-radius: calc(var(--radius) + 6px);
+    overflow: hidden;
+    margin: 12px 0 28px;
+    min-height: 160px;
+    background:
+      linear-gradient(105deg, var(--accent-soft), transparent 55%),
+      radial-gradient(ellipse 70% 90% at 0% 50%, var(--mood-mid), transparent 60%),
+      radial-gradient(ellipse 55% 85% at 100% 0%, var(--persona-tint), transparent 55%),
+      linear-gradient(180deg, rgba(0,0,0,0.1), rgba(0,0,0,0.55)),
+      var(--bg2);
+    box-shadow: inset 0 0 60px var(--mood-mid);
+    border: 1px solid var(--border);
+    padding: 28px 28px 24px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: 10px;
+    transition: background var(--ease-mood), border-color var(--ease-mood), box-shadow var(--ease-mood);
+  }
+  .result-banner h2 {
+    font-size: clamp(1.5rem, 3.5vw, 2.15rem);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+  .result-banner .subline {
+    color: var(--muted);
+    font-size: 0.95rem;
+    max-width: 36em;
+  }
+  .tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .tag {
+    font-size: 0.75rem;
+    padding: 5px 11px;
+    border-radius: 999px;
+    background: rgba(0,0,0,0.35);
+    border: 1px solid var(--border);
+    color: var(--text);
+    transition: background var(--ease-mood), border-color var(--ease-mood), color var(--ease-mood);
+  }
+  .tag.accent {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+  }
+  .tag.persona {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 11px 4px 5px;
+    background: linear-gradient(105deg, var(--accent-soft), rgba(255,255,255,0.05));
+    border-color: rgba(255,255,255,0.22);
+    animation: personaIn 0.45s ease forwards;
+  }
+  .tag.persona .persona-avatar { width: 20px; height: 20px; }
+
+  .result-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+  .result-toolbar .left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .result-toolbar h3 {
+    font-size: 1.15rem;
+    font-weight: 700;
+  }
+
+  .batch-hint {
+    background: rgba(255,200,120,0.12);
+    border: 1px solid rgba(255,200,120,0.28);
+    color: #f0d9a8;
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    margin-bottom: 16px;
+  }
+
+  /* Poster wall — 3 cols desktop, 1 col mobile */
+  .wall {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  @media (min-width: 720px) {
+    .wall { grid-template-columns: repeat(3, 1fr); gap: 22px; }
+  }
+
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    transition: transform 0.22s ease, box-shadow 0.22s ease;
+  }
+  .card:hover {
+    transform: scale(1.03);
+    box-shadow: 0 18px 48px rgba(0,0,0,0.55), 0 0 0 1px var(--accent-glow);
+    z-index: 2;
+  }
+  .poster-wrap {
+    position: relative;
+    aspect-ratio: 2 / 3;
+    background: #222;
+    overflow: hidden;
+  }
+  .poster-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .poster-ph {
+    width: 100%;
+    height: 100%;
+    display: grid;
+    place-items: center;
+    padding: 16px;
+    text-align: center;
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: #fff;
+  }
+  .card-body {
+    padding: 14px 14px 16px;
+  }
+  .card-body .title {
+    font-weight: 700;
+    font-size: 1.05rem;
+    margin-bottom: 4px;
+  }
+  .card-body .meta {
+    font-size: 0.75rem;
+    color: var(--muted2);
+    margin-bottom: 8px;
+  }
+  .card-body .reason {
+    font-size: 0.88rem;
+    color: var(--muted);
+    line-height: 1.45;
+    min-height: 2.6em;
+  }
+  .go {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 12px;
+  }
+  .go a {
+    font-size: 0.72rem;
+    color: var(--cta-text);
+    background: var(--accent);
+    padding: 5px 10px;
+    border-radius: 999px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: background var(--ease-mood), color var(--ease-mood), filter 0.15s;
+  }
+  .go a:hover { filter: brightness(1.1); }
+  .fb {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .fb button {
+    flex: 1;
+    font-family: inherit;
+    font-size: 0.8rem;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: rgba(0,0,0,0.3);
+    color: var(--muted);
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+  }
+  .fb button:hover { background: var(--surface-hover); color: var(--text); }
+  .fb button.on {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+    color: #fff;
+    font-weight: 600;
+  }
+
+  .empty-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 48px 20px;
+    color: var(--muted);
+    background: var(--surface);
+    border-radius: var(--radius);
+    border: 1px dashed var(--border);
+  }
+
+  /* Feedback */
+  .note {
+    margin-top: 36px;
+    padding: 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    max-width: 560px;
+  }
+  .note .nt {
+    font-weight: 600;
+    margin-bottom: 10px;
+    font-size: 0.95rem;
+  }
+  .note .row {
+    display: flex;
+    gap: 8px;
+  }
+  .note input {
+    flex: 1;
+    font-family: inherit;
+    font-size: 0.9rem;
+    padding: 11px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: rgba(0,0,0,0.35);
+    color: var(--text);
+    outline: none;
+  }
+  .note input:focus { border-color: var(--accent); }
+  .note .submit {
+    font-family: inherit;
+    font-weight: 600;
+    font-size: 0.88rem;
+    padding: 11px 16px;
+    border-radius: 10px;
+    border: none;
+    background: var(--accent);
+    color: var(--cta-text);
+    cursor: pointer;
+    transition: background var(--ease-mood), color var(--ease-mood);
+  }
+  .note small {
+    display: block;
+    margin-top: 8px;
+    color: var(--muted2);
+    font-size: 0.72rem;
+  }
+
+  /* Toast */
+  #toast {
+    position: fixed;
+    left: 50%;
+    bottom: 32px;
+    transform: translateX(-50%) translateY(20px);
+    background: #f2f2f5;
+    color: #1a1a1e;
+    padding: 12px 22px;
+    border-radius: 999px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s, transform 0.25s;
+    z-index: 100;
+    white-space: nowrap;
+  }
+  #toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  .scene-badge {
+    position: fixed;
+    top: 12px;
+    right: 12px;
+    z-index: 50;
+    font-size: 0.7rem;
+    background: rgba(0,0,0,0.7);
+    border: 1px solid var(--border);
+    padding: 4px 10px;
+    border-radius: 6px;
+    color: var(--muted);
+  }
+  .scene-badge.hidden { display: none; }
+
+
+  /* ===== Persona stage: tall half-body / 立绘 panel (not circular crop) ===== */
+  .persona-stage {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    text-align: center;
+    pointer-events: none;
+    animation: personaStageIn 0.55s ease forwards;
+  }
+  .persona-stage.out {
+    animation: personaStageOut 0.35s ease forwards;
+  }
+  @keyframes personaStageIn {
+    from { opacity: 0; transform: translateY(24px) scale(0.94); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  @keyframes personaStageOut {
+    from { opacity: 1; transform: translateY(0) scale(1); }
+    to   { opacity: 0; transform: translateY(16px) scale(0.94); }
+  }
+  /* Tall figure frame — full SVG art, object-fit contain, no circle crop */
+  .persona-stage-ring {
+    position: relative;
+    width: 240px;
+    height: 300px;
+    border-radius: 22px;
+    display: grid;
+    place-items: end center;
+    flex-shrink: 0;
+    overflow: visible;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.06) 0%, transparent 40%),
+      radial-gradient(ellipse 80% 50% at 50% 18%, var(--persona-tint), transparent 65%),
+      linear-gradient(180deg, rgba(20,20,28,0.55) 0%, rgba(8,8,12,0.75) 100%);
+    border: 1px solid rgba(255,255,255,0.14);
+    box-shadow:
+      0 0 0 1px rgba(0,0,0,0.35),
+      0 24px 56px rgba(0,0,0,0.55),
+      0 0 48px var(--persona-glow);
+  }
+  .persona-stage-ring::before {
+    content: "";
+    position: absolute;
+    inset: -12px -8px -4px;
+    border-radius: 28px;
+    background:
+      radial-gradient(ellipse 70% 40% at 50% 8%, var(--persona-glow), transparent 70%),
+      radial-gradient(ellipse 90% 35% at 50% 100%, var(--accent-glow), transparent 72%);
+    filter: blur(8px);
+    opacity: 0.95;
+    z-index: 0;
+    pointer-events: none;
+  }
+  .persona-stage-ring::after {
+    content: "";
+    position: absolute;
+    left: 12%;
+    right: 12%;
+    bottom: 10px;
+    height: 28px;
+    border-radius: 50%;
+    background: radial-gradient(ellipse at center, rgba(0,0,0,0.55), transparent 70%);
+    z-index: 1;
+    pointer-events: none;
+  }
+  .persona-stage-av {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    height: 100%;
+    max-height: 300px;
+    border-radius: 18px;
+    object-fit: contain;
+    object-position: center bottom;
+    border: none;
+    box-shadow: none;
+    background: transparent !important;
+    filter: drop-shadow(0 12px 20px rgba(0,0,0,0.45));
+  }
+  .persona-stage-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    position: relative;
+    margin-top: 2px;
+  }
+  .persona-stage-meta::before { display: none; }
+  .persona-stage-nick {
+    font-size: 1.28rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: var(--text);
+  }
+  .persona-stage-code {
+    font-size: 0.9rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    transition: color var(--ease-mood);
+  }
+  .persona-stage-hint {
+    font-size: 0.72rem;
+    color: var(--muted2);
+    margin-top: 2px;
+  }
+
+  /* compact: result banner — still tall figure, smaller */
+  .persona-stage.compact .persona-stage-ring {
+    width: 140px;
+    height: 190px;
+    border-radius: 16px;
+  }
+  .persona-stage.compact .persona-stage-av {
+    max-height: 190px;
+    border-radius: 14px;
+  }
+  .persona-stage.compact .persona-stage-nick { font-size: 1rem; }
+  .persona-stage.compact .persona-stage-code { font-size: 0.8rem; }
+  .persona-stage.compact .persona-stage-hint { display: none; }
+
+  /* Home layout: wide = right column figure; narrow = below MBTI */
+  .home-layout {
+    display: flex;
+    flex-direction: column;
+  }
+  .home-col { order: 1; min-width: 0; }
+  .home-layout > .persona-stage {
+    order: 2;
+    margin: 8px auto 22px;
+    max-width: 280px;
+  }
+  .home-cta { order: 3; }
+
+  @media (min-width: 960px) {
+    .home-layout.has-persona {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 300px;
+      grid-template-rows: auto auto;
+      column-gap: 18px;
+      align-items: start;
+    }
+    .home-layout.has-persona .home-col {
+      grid-column: 1;
+      grid-row: 1;
+      order: unset;
+    }
+    .home-layout.has-persona > .persona-stage {
+      grid-column: 2;
+      grid-row: 1 / span 2;
+      order: unset;
+      margin: 28px 0 0;
+      position: sticky;
+      top: 64px;
+      align-self: start;
+      justify-self: center;
+      max-width: 280px;
+    }
+    .home-layout.has-persona .home-cta {
+      grid-column: 1;
+      grid-row: 2;
+      order: unset;
+    }
+    .home-layout.has-persona .persona-stage-ring {
+      width: 300px;
+      height: 360px;
+    }
+    .home-layout.has-persona .persona-stage-av {
+      max-height: 360px;
+    }
+  }
+  @media (max-width: 959px) {
+    .home-layout > .persona-stage .persona-stage-ring {
+      width: 180px;
+      height: 240px;
+    }
+    .home-layout > .persona-stage .persona-stage-av {
+      max-height: 240px;
+    }
+  }
+  @media (max-width: 420px) {
+    .home-layout > .persona-stage .persona-stage-ring {
+      width: 160px;
+      height: 220px;
+    }
+    .home-layout > .persona-stage .persona-stage-av {
+      max-height: 220px;
+    }
+  }
+
+  /* Result banner + 立绘 */
+  .result-banner.has-persona {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 18px 24px;
+  }
+  .result-banner-main {
+    flex: 1 1 240px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: 10px;
+    min-width: 0;
+  }
+  .result-banner .persona-stage {
+    flex: 0 0 auto;
+    margin: 0;
+    align-self: center;
+  }
+  @media (max-width: 600px) {
+    .result-banner.has-persona {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .result-banner .persona-stage {
+      align-self: flex-end;
+      order: -1;
+      margin-bottom: 4px;
+    }
+    .result-banner .persona-stage.compact .persona-stage-ring {
+      width: 120px;
+      height: 160px;
+    }
+    .result-banner .persona-stage.compact .persona-stage-av {
+      max-height: 160px;
+    }
+  }
+
+  footer.foot {
+    margin-top: 48px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    font-size: 0.75rem;
+    color: var(--muted2);
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+<div class="ambient" id="ambient" aria-hidden="true"></div>
+<div class="scene-badge hidden" id="sceneBadge"></div>
+<div class="shell" id="app"></div>
+<div id="toast"><span class="toast-msg"></span></div>
+
+<script>
+const MOODS = [
+  /* 色板依据：色彩-情绪研究综述（红↔激情/兴奋；黄橙↔愉悦；青绿↔平静；蓝↔悲伤；灰↔疲惫）。
+     烦躁/焦虑在产品里是「换个心情」，主强调色跟情绪词，氛围渐变可略偏疏解。
+     soft/glow/mid 提高透明度，切换心情时氛围必须一眼可辨。 */
+  { id: "tired",   emoji: "😮‍💨", name: "累了", hint: "不费脑，慢慢看",
+    theme: { accent: "#c4a090", soft: "rgba(196,160,144,0.55)", glow: "rgba(196,160,144,0.72)", mid: "rgba(196,160,144,0.32)", gradA: "#3d2a30", cta: "#c4a090", ctaText: "#1a1210" },
+    banner: "累了就歇会儿，挑部不费脑的慢慢看。",
+    tone: "soft" },
+  { id: "annoyed", emoji: "😤",   name: "烦躁", hint: "来点轻松解压的",
+    theme: { accent: "#ff8a4c", soft: "rgba(255,138,76,0.5)", glow: "rgba(255,160,60,0.75)", mid: "rgba(255,180,80,0.35)", gradA: "#4a2810", cta: "#ff8a4c", ctaText: "#1a1008" },
+    banner: "气鼓鼓也没关系，笑一场就松了。",
+    tone: "bright" },
+  { id: "empty",   emoji: "🫥",   name: "空虚", hint: "找部能躲进去的",
+    theme: { accent: "#8b9dc9", soft: "rgba(139,157,201,0.5)", glow: "rgba(139,157,201,0.7)", mid: "rgba(139,157,201,0.32)", gradA: "#222840", cta: "#8b9dc9", ctaText: "#0e1018" },
+    banner: "空一点的时候，电影刚好能把你接住。",
+    tone: "mist" },
+  { id: "cry",     emoji: "🥲",   name: "想哭", hint: "来部催泪的",
+    theme: { accent: "#6b8cae", soft: "rgba(107,140,174,0.52)", glow: "rgba(160,140,190,0.68)", mid: "rgba(200,160,180,0.3)", gradA: "#243044", cta: "#6b8cae", ctaText: "#0c1016" },
+    banner: "想哭就哭吧，好片子陪你把眼泪哭干。",
+    tone: "tender" },
+  { id: "hype",    emoji: "🥳",   name: "想嗨", hint: "燃起来，爽到底",
+    theme: { accent: "#ff3d2e", soft: "rgba(255,61,46,0.5)", glow: "rgba(255,70,40,0.78)", mid: "rgba(255,90,40,0.36)", gradA: "#4a1410", cta: "#ff3d2e", ctaText: "#1a0806" },
+    banner: "今晚不躺平——燃起来，爽到底。",
+    tone: "fire" },
+  { id: "anxiety", emoji: "😰",   name: "焦虑", hint: "节奏慢，不紧绷",
+    theme: { accent: "#5fad7a", soft: "rgba(95,173,122,0.5)", glow: "rgba(95,173,122,0.7)", mid: "rgba(95,173,122,0.32)", gradA: "#143828", cta: "#5fad7a", ctaText: "#0c1610" },
+    banner: "先把节奏放慢，不紧绷的片子更懂你。",
+    tone: "calm" },
+  { id: "bored",   emoji: "🥱",   name: "无聊", hint: "来点新鲜有劲的",
+    theme: { accent: "#3d9ecf", soft: "rgba(61,158,207,0.48)", glow: "rgba(61,158,207,0.72)", mid: "rgba(61,180,210,0.3)", gradA: "#103040", cta: "#3d9ecf", ctaText: "#061018" },
+    banner: "无聊最怕无聊——来点新鲜有劲的。",
+    tone: "neon" },
+];
+
+const THEME_DEFAULT = {
+  accent: "#c4a090", soft: "rgba(196,160,144,0.28)", glow: "rgba(196,160,144,0.4)",
+  mid: "rgba(196,160,144,0.14)", gradA: "#1a1218", cta: "#c4a090", ctaText: "#1a1210"
+};
+
+const MBTI = [
+  "INTJ","INTP","ENTJ","ENTP",
+  "INFJ","INFP","ENFJ","ENFP",
+  "ISTJ","ISFJ","ESTJ","ESFJ",
+  "ISTP","ISFP","ESTP","ESFP"
+];
+
+/* MBTI 社区昵称 + 原创卡通头像（四组底色，勿抄官图） */
+const MBTI_GROUPS = {
+  NT: { bg: "#a78bfa", tint: "rgba(167,139,250,0.14)", glow: "rgba(167,139,250,0.2)" },
+  NF: { bg: "#6ee7a8", tint: "rgba(110,231,168,0.14)", glow: "rgba(110,231,168,0.2)" },
+  SJ: { bg: "#7dd3fc", tint: "rgba(125,211,252,0.14)", glow: "rgba(125,211,252,0.2)" },
+  SP: { bg: "#fcd34d", tint: "rgba(252,211,77,0.14)",  glow: "rgba(252,211,77,0.2)"  },
+};
+const MBTI_PERSONA = {
+  INTJ: { label: "紫老头",   group: "NT", avatar: "persona/INTJ.svg" },
+  INTP: { label: "药水姐",   group: "NT", avatar: "persona/INTP.svg" },
+  ENTJ: { label: "大姐头",   group: "NT", avatar: "persona/ENTJ.svg" },
+  ENTP: { label: "骨折眉",   group: "NT", avatar: "persona/ENTP.svg" },
+  INFJ: { label: "绿老头",   group: "NF", avatar: "persona/INFJ.svg" },
+  INFP: { label: "小蝴蝶",   group: "NF", avatar: "persona/INFP.svg" },
+  ENFJ: { label: "大剑哥",   group: "NF", avatar: "persona/ENFJ.svg" },
+  ENFP: { label: "快乐小狗", group: "NF", avatar: "persona/ENFP.svg" },
+  ISTJ: { label: "蓝老头",   group: "SJ", avatar: "persona/ISTJ.svg" },
+  ISFJ: { label: "小护士",   group: "SJ", avatar: "persona/ISFJ.svg" },
+  ESTJ: { label: "尺子姐",   group: "SJ", avatar: "persona/ESTJ.svg" },
+  ESFJ: { label: "蛋糕哥",   group: "SJ", avatar: "persona/ESFJ.svg" },
+  ISTP: { label: "墨镜哥",   group: "SP", avatar: "persona/ISTP.svg" },
+  ISFP: { label: "小画家",   group: "SP", avatar: "persona/ISFP.svg" },
+  ESTP: { label: "电钻哥",   group: "SP", avatar: "persona/ESTP.svg" },
+  ESFP: { label: "沙锤姐",   group: "SP", avatar: "persona/ESFP.svg" },
+};
+
+/* MBTI：结果集由 applyMbtiFilter(mbti_boost) 真筛；flavorReason 仅作理由语气前缀 */
+const MBTI_FLAVOR = {
+  INTJ: "逻辑向 · ", INTP: "脑洞向 · ", ENTJ: "目标感 · ", ENTP: "点子多 · ",
+  INFJ: "共鸣向 · ", INFP: "感性向 · ", ENFJ: "温暖向 · ", ENFP: "灵感向 · ",
+  ISTJ: "扎实向 · ", ISFJ: "安心向 · ", ESTJ: "干脆向 · ", ESFJ: "陪伴向 · ",
+  ISTP: "干脆向 · ", ISFP: "氛围向 · ", ESTP: "刺激向 · ", ESFP: "热闹向 · ",
+};
+
+function personaOf(code) {
+  if (!code) return null;
+  const p = MBTI_PERSONA[code];
+  if (!p) return null;
+  const g = MBTI_GROUPS[p.group] || MBTI_GROUPS.NT;
+  return {
+    code,
+    label: p.label,
+    group: p.group,
+    avatar: p.avatar,
+    bg: g.bg,
+    text: code + " · " + p.label,
+  };
+}
+
+function avatarImg(p, sizeClass) {
+  if (!p) return "";
+  const cls = "persona-avatar " + (sizeClass || "sm");
+  return `<img class="${cls}" src="${p.avatar}" alt="${esc(p.code)} ${esc(p.label)}" width="44" height="44" style="--persona-bg:${p.bg};background:${p.bg}" loading="lazy">`;
+}
+
+/* 四组轻 tint：紫 NT / 绿 NF / 蓝 SJ / 黄 SP；不抢心情主色 */
+function personaTint(mbti) {
+  if (!mbti) return { tint: "transparent", glow: "transparent", opacity: "0", bg: "transparent" };
+  const p = MBTI_PERSONA[mbti];
+  if (!p) return { tint: "transparent", glow: "transparent", opacity: "0", bg: "transparent" };
+  const g = MBTI_GROUPS[p.group] || MBTI_GROUPS.NT;
+  return { tint: g.tint, glow: g.glow, opacity: "1", bg: g.bg };
+}
+
+const TYPE_OPTS = ["全部", "电影", "电视剧", "动漫", "短剧"];
+
+const GRAD = [
+  "linear-gradient(160deg,#c4a090,#8a4050)",
+  "linear-gradient(160deg,#5fad7a,#2a5a40)",
+  "linear-gradient(160deg,#8b9dc9,#3a2a70)",
+  "linear-gradient(160deg,#ff8a4c,#8a5020)",
+  "linear-gradient(160deg,#3d9ecf,#1a4060)",
+  "linear-gradient(160deg,#6b8cae,#603050)",
+];
+
+const POOL = {
+  tired: [
+    { t: "海蒂和爷爷", type: "电影", img: "25958717", r: "山风和奶酪，脑子放空", go: ["腾讯视频", "优酷"] , mbti: ["INFJ","INFP","ISFJ"], mbti_boost: ["INFJ","INFP","ISFJ"]},
+    { t: "龙猫", type: "动漫", img: "1291560", r: "下雨天撑伞，慢慢陪着你", go: ["B站"] , mbti: ["INFJ","INFP","ISFP"], mbti_boost: ["INFJ","INFP","ISFP"]},
+    { t: "完美的日子", type: "电影", img: "35902857", r: "扫厕所的日常，也有光", go: ["腾讯视频"] , mbti: ["INFJ","ISFP"], mbti_boost: ["INFJ","ISFP"]},
+    { t: "白熊咖啡馆", type: "动漫", img: "10527294", r: "一集一杯咖啡，慢悠悠", go: ["B站"] , mbti: ["INFP","ISFJ"], mbti_boost: ["INFP","ISFJ"]},
+    { t: "千与千寻", type: "动漫", img: "1291561", r: "神隐世界里慢慢找回自己", go: ["B站", "爱奇艺"] , mbti: ["INFJ","INFP"], mbti_boost: ["INFJ","INFP"]},
+    { t: "深夜食堂", type: "电视剧", img: "3991933", r: "一碗热食，把心慢慢焐热", go: ["B站", "腾讯视频"] , mbti: [], mbti_boost: []},
+    { t: "请回答1988", type: "电视剧", img: "26302614", r: "邻里烟火，慢慢把心安放", go: ["腾讯视频", "爱奇艺"] , mbti: ["INFJ","INFP","ISFJ"], mbti_boost: ["INFJ","INFP","ISFJ"]},
+    { t: "孤独的美食家", type: "电视剧", img: "7065168", r: "一集一餐，独自也不慌", go: ["B站"] , mbti: [], mbti_boost: []},
+    { t: "海女", type: "电视剧", img: "10581289", r: "海风与家人，节奏很松", go: ["腾讯视频", "爱奇艺"] , mbti: [], mbti_boost: []},
+    { t: "四重奏", type: "电视剧", img: "26895171", r: "中年重启，看着不费劲", go: ["腾讯视频", "爱奇艺"] , mbti: [], mbti_boost: []},
+  ],
+  annoyed: [
+    { t: "夏洛特烦恼", type: "电影", img: "25964071", r: "穿越回青春，笑完就松了", go: ["腾讯视频", "爱奇艺"] , mbti: ["ENFP","ESFP"], mbti_boost: ["ENFP","ESFP"]},
+    { t: "年会不能停！", type: "电影", img: "35725869", r: "职场荒诞喜剧，一口出气", go: ["腾讯视频"] , mbti: ["ENFP","ENTP"], mbti_boost: ["ENFP","ENTP"]},
+    { t: "芭比", type: "电影", img: "4058939", r: "粉红泡泡里打个翻身仗", go: ["爱奇艺"] , mbti: [], mbti_boost: []},
+    { t: "实习生", type: "电影", img: "10594965", r: "老先生上班，轻松又暖", go: ["优酷"] , mbti: [], mbti_boost: []},
+    { t: "一拳超人", type: "动漫", img: "26339248", r: "一拳解决烦恼，爽快解压", go: ["B站"] , mbti: [], mbti_boost: []},
+    { t: "武林外传", type: "电视剧", img: "3882715", r: "客栈胡闹一场，气就散了", go: ["腾讯视频", "爱奇艺"] , mbti: ["ENFP","ESFP"], mbti_boost: ["ENFP","ESFP"]},
+    { t: "生活大爆炸", type: "电视剧", img: "2156528", r: "极客贫嘴，笑完就不烦", go: ["腾讯视频", "爱奇艺"] , mbti: [], mbti_boost: []},
+    { t: "我是大哥大", type: "电视剧", img: "30183785", r: "装酷日常，一路爆笑解压", go: ["B站", "腾讯视频"] , mbti: [], mbti_boost: []},
+    { t: "酷爱电影的庞波小姐", type: "动漫", img: "30037194", r: "庞波追梦，笑着把气消了", go: ["B站"] , mbti: [], mbti_boost: []},
+    { t: "妖怪公寓的幽雅日常", type: "动漫", img: "27003233", r: "妖怪合租，轻松换心情", go: ["B站"] , mbti: [], mbti_boost: []},
+    { t: "老友记", type: "电视剧", img: "1393859", r: "沙发上的老朋友，解压", go: ["腾讯视频", "爱奇艺"] , mbti: [], mbti_boost: []},
+    { t: "破产姐妹", type: "电视剧", img: "6395245", r: "闺蜜闯纽约，一路好笑", go: ["腾讯视频", "爱奇艺"] , mbti: [], mbti_boost: []},
+  ],
+  empty: [
+    { t: "重庆森林", type: "电影", img: "1291999", r: "城市角落里，找一点陪伴", go: ["B站"] , mbti: ["INFJ","INFP","ISFP"], mbti_boost: ["INFJ","INFP","ISFP"]},
+    { t: "迷失东京", type: "电影", img: "1291835", r: "异乡失眠夜，有人懂你", go: [] , mbti: ["INFJ","INFP"], mbti_boost: ["INFJ","INFP"]},
+    { t: "心灵奇旅", type: "动漫", img: "24733428", r: "活着本身，就值得看看", go: ["迪士尼+", "B站"] , mbti: ["INFJ","INFP"], mbti_boost: ["INFJ","INFP"]},
+    { t: "少女终末旅行", type: "动漫", img: "27081136", r: "末日里的安静旅程，慢慢走", go: ["B站"] , mbti: ["INFJ","INTJ"], mbti_boost: ["INFJ","INTJ"]},
+    { t: "虫师", type: "动漫", img: "1800597", r: "山野虫鸣，像有人陪着", go: ["B站"] , mbti: ["INFJ","INTP"], mbti_boost: ["INFJ","INTP"]},
+    { t: "我的大叔", type: "电视剧", img: "27602137", r: "两个落魄人，彼此成光", go: ["爱奇艺", "腾讯视频"] , mbti: [], mbti_boost: []},
+    { t: "东京爱情故事", type: "电视剧", img: "1438760", r: "都会夜里，有人懂孤独", go: ["B站"] , mbti: [], mbti_boost: []},
+    { t: "四重奏", type: "电视剧", img: "26895171", r: "四人合奏，把空慢慢填满", go: ["B站", "腾讯视频"] , mbti: [], mbti_boost: []},
+    { t: "非自然死亡", type: "电视剧", img: "27140017", r: "探案里看见人间温度", go: ["腾讯视频", "爱奇艺"] , mbti: [], mbti_boost: []},
+    { t: "走进你的时间", type: "电视剧", img: "35368730", r: "温柔陪伴，慢慢靠近", go: ["腾讯视频", "爱奇艺"] , mbti: [], mbti_boost: []},
+  ],
+  cry: [
+    { t: "忠犬八公的故事", type: "电影", img: "3011091", r: "车站那一眼，准备好纸巾", go: ["腾讯视频", "爱奇艺"] , mbti: ["ESFJ","INFP","ISFJ"], mbti_boost: ["ESFJ","INFP","ISFJ"]},
+    { t: "我们俩", type: "电影", img: "1756073", r: "租客与房东，细水长流的泪", go: ["B站"] , mbti: [], mbti_boost: []},
+    { t: "机器人之梦", type: "动漫", img: "35426925", r: "没有对白，也能哭干眼泪", go: ["B站"] , mbti: ["INFP","ISFJ"], mbti_boost: ["INFP","ISFJ"]},
+    { t: "紫罗兰永恒花园", type: "动漫", img: "26805209", r: "「我爱你」三个字的重量", go: ["B站"] , mbti: ["INFJ","INFP"], mbti_boost: ["INFJ","INFP"]},
+    { t: "朝花夕誓", type: "动漫", img: "27083561", r: "一朵花的一生，温柔催泪", go: [] , mbti: [], mbti_boost: []},
+    { t: "父母爱情", type: "电视剧", img: "19965220", r: "一代人的爱，细水长流泪", go: ["腾讯视频", "爱奇艺"] , mbti: [], mbti_boost: []},
+    { t: "未生", type: "电视剧", img: "25870057", r: "职场新人，委屈与成长同在", go: ["爱奇艺"] , mbti: [], mbti_boost: []},
+    { t: "鬼怪", type: "电视剧", img: "26761935", r: "神仙与凡人，笑着哭一场", go: ["爱奇艺", "腾讯视频"] , mbti: [], mbti_boost: []},
+    { t: "请回答1988", type: "电视剧", img: "26302614", r: "青春友情，准备好纸巾", go: ["腾讯视频", "爱奇艺"] , mbti: ["INFJ","INFP","ISFJ"], mbti_boost: ["INFJ","INFP","ISFJ"]},
+  ],
+  hype: [
+    { t: "疾速追杀", type: "电影", img: "25798131", r: "枪火与西装，一路燃到底", go: ["腾讯视频"] , mbti: ["ENTJ","ESTP"], mbti_boost: ["ENTJ","ESTP"]},
+    { t: "生死时速", type: "电影", img: "1293167", r: "时速五十不能停，心跳加速", go: ["优酷", "爱奇艺"] , mbti: [], mbti_boost: []},
+    { t: "子弹列车", type: "电影", img: "35118954", r: "车厢杀穿，肾上腺素狂飙", go: ["Netflix"] , mbti: [], mbti_boost: []},
+    { t: "排球少年", type: "动漫", img: "25732103", r: "发球落地的那一刻，燃炸", go: ["B站"] , mbti: ["ENFP","ESFP"], mbti_boost: ["ENFP","ESFP"]},
+    { t: "灌篮高手", type: "动漫", img: "35315950", r: "湘北冲向全国，热血满格", go: ["B站", "腾讯视频"] , mbti: [], mbti_boost: []},
+    { t: "狂飙", type: "电视剧", img: "35465232", r: "正邪对撞，一集比一集燃", go: ["爱奇艺", "腾讯视频"] , mbti: ["ENTJ","ESTJ"], mbti_boost: ["ENTJ","ESTJ"]},
+    { t: "庆余年", type: "电视剧", img: "25853071", r: "朝堂江湖，脑洞与爽点齐飞", go: ["腾讯视频", "爱奇艺"] , mbti: [], mbti_boost: []},
+    { t: "开端", type: "电视剧", img: "35332289", r: "公交循环，越追越上头", go: ["腾讯视频", "爱奇艺"] , mbti: ["ENTP","INTP"], mbti_boost: ["ENTP","INTP"]},
+    { t: "三体", type: "电视剧", img: "26647087", r: "硬核科幻，脑洞拉满", go: ["腾讯视频", "爱奇艺"] , mbti: [], mbti_boost: []},
+  ],
+  anxiety: [
+    { t: "触不可及", type: "电影", img: "6786002", r: "两个人的友谊，把心放平", go: ["腾讯视频", "爱奇艺"] , mbti: ["ENFJ","INFJ","ISFJ"], mbti_boost: ["ENFJ","INFJ","ISFJ"]},
+    { t: "日日是好日", type: "电影", img: "27185563", r: "一碗茶的时间，慢慢不急", go: [] , mbti: ["INFJ","ISFJ"], mbti_boost: ["INFJ","ISFJ"]},
+    { t: "憨豆的黄金周", type: "电影", img: "1829654", r: "笨拙旅行，笑一笑就松", go: ["优酷"] , mbti: [], mbti_boost: []},
+    { t: "时空恋旅人", type: "电影", img: "10577869", r: "重来无数次，只为好好说", go: ["腾讯视频"] , mbti: ["ENFP","INFJ","INFP"], mbti_boost: ["ENFP","INFJ","INFP"]},
+    { t: "灵能百分百", type: "动漫", img: "26677934", r: "社恐超能力，节奏不紧绷", go: ["B站"] , mbti: [], mbti_boost: []},
+    { t: "去有风的地方", type: "电视剧", img: "35662223", r: "云南慢生活，把焦虑吹散", go: ["腾讯视频", "爱奇艺"] , mbti: ["ISFJ","ISFP"], mbti_boost: ["ISFJ","ISFP"]},
+    { t: "足球教练", type: "电视剧", img: "34843220", r: "乐观教练，把心慢慢扶正", go: ["Apple TV+"] , mbti: [], mbti_boost: []},
+    { t: "平屋慢生活", type: "电视剧", img: "37414697", r: "一间平屋，把节奏放慢", go: ["B站"] , mbti: [], mbti_boost: []},
+    { t: "放学后海堤日记", type: "动漫", img: "33413811", r: "海堤日常，慢慢把心安稳", go: ["B站"] , mbti: [], mbti_boost: []},
+    { t: "意外的幸运签", type: "动漫", img: "4934987", r: "小确幸着陆，焦虑轻一点", go: ["B站"] , mbti: [], mbti_boost: []},
+    { t: "小别离", type: "电视剧", img: "26322639", r: "家庭日常，焦虑有人懂", go: ["腾讯视频", "爱奇艺"] , mbti: [], mbti_boost: []},
+    { t: "都挺好", type: "电视剧", img: "27088993", r: "原生家庭，看完会松一点", go: ["腾讯视频", "爱奇艺"] , mbti: [], mbti_boost: []},
+  ],
+  bored: [
+    { t: "失控玩家", type: "电影", img: "30337388", r: "NPC 觉醒，脑洞拉满", go: ["腾讯视频", "爱奇艺"] , mbti: ["ENFP","ENTP"], mbti_boost: ["ENFP","ENTP"]},
+    { t: "游戏之夜", type: "电影", img: "26949241", r: "邻居局变大案，一路反转", go: ["优酷"] , mbti: [], mbti_boost: []},
+    { t: "这很河狸", type: "电影", img: "36465526", r: "荒诞喜剧感，一集就解闷", go: ["Netflix"] , mbti: [], mbti_boost: []},
+    { t: "在下坂本，有何贵干？", type: "动漫", img: "26708698", r: "高冷装帅日常，新鲜有劲", go: ["B站"] , mbti: [], mbti_boost: []},
+    { t: "异世界归来的舅舅", type: "动漫", img: "35417872", r: "舅舅归来，脑洞一路开", go: ["B站"] , mbti: [], mbti_boost: []},
+    { t: "黑镜", type: "电视剧", img: "7054120", r: "科技寓言，一集一个脑洞", go: ["Netflix", "B站"] , mbti: ["INTJ","INTP"], mbti_boost: ["INTJ","INTP"]},
+    { t: "星期三", type: "电视剧", img: "35364243", r: "怪校日常，冷幽默一路钩", go: ["Netflix"] , mbti: [], mbti_boost: []},
+    { t: "致命女人", type: "电视剧", img: "30401122", r: "妻子们的秘密，反转不停", go: ["腾讯视频", "爱奇艺"] , mbti: [], mbti_boost: []},
+    { t: "T教授", type: "电视剧", img: "34996982", r: "古怪探案，新鲜有劲", go: ["腾讯视频", "爱奇艺"] , mbti: [], mbti_boost: []},
+    { t: "切尔西侦探", type: "电视剧", img: "35613980", r: "英伦探案，节奏轻快", go: ["腾讯视频", "爱奇艺"] , mbti: [], mbti_boost: []},
+  ],
+};
+
+const state = {
+  page: "home",
+  mood: null,
+  mbti: null,
+  mbtiOpen: false,
+  types: ["全部"],
+  batch: 0,
+  votes: {},
+  sceneLock: false,
+  batchHint: null,
+  _themeKey: "",
+};
+
+(function initScene() {
+  const sp = new URLSearchParams(location.search);
+  const scene = sp.get("scene");
+  const badge = document.getElementById("sceneBadge");
+  if (scene === "home") {
+    state.sceneLock = true;
+    state.page = "home";
+    state.mood = null;
+    badge.textContent = "场景 · 首页";
+    badge.classList.remove("hidden");
+  } else if (scene === "result") {
+    state.sceneLock = true;
+    state.page = "result";
+    state.mood = "tired";
+    state.mbti = "INFP";
+    state.types = ["全部"];
+    badge.textContent = "场景 · 结果";
+    badge.classList.remove("hidden");
+  } else if (scene === "short") {
+    state.sceneLock = true;
+    state.page = "home";
+    state.mood = "cry";
+    state.types = ["全部"];
+    badge.textContent = "场景 · 短剧置灰";
+    badge.classList.remove("hidden");
+  }
+})();
+
+function applyTheme(moodId, opts) {
+  opts = opts || {};
+  const root = document.documentElement;
+  const m = MOODS.find(x => x.id === moodId);
+  const t = m ? m.theme : THEME_DEFAULT;
+  /* 心情主色始终主导；MBTI 四组色只作头像底 / 极淡 tint，不抢主色 */
+  const pt = personaTint(state.mbti);
+  root.style.setProperty("--accent", t.accent);
+  root.style.setProperty("--accent-soft", t.soft);
+  root.style.setProperty("--accent-glow", t.glow);
+  root.style.setProperty("--mood-mid", t.mid || "transparent");
+  root.style.setProperty("--grad-a", t.gradA);
+  root.style.setProperty("--cta", t.cta);
+  root.style.setProperty("--cta-text", t.ctaText);
+  root.style.setProperty("--persona-tint", pt.tint);
+  root.style.setProperty("--persona-glow", pt.glow);
+  root.style.setProperty("--persona-opacity", pt.opacity);
+  root.style.setProperty("--persona-bg", pt.bg || "transparent");
+
+  const key = (moodId || "none") + "|" + (state.mbti || "");
+  const changed = key !== state._themeKey;
+  state._themeKey = key;
+  if (opts.pulse !== false && changed) pulseAmbient();
+}
+
+let ambientPulseTimer = null;
+function pulseAmbient() {
+  const el = document.getElementById("ambient");
+  if (!el) return;
+  el.classList.remove("pulse");
+  /* reflow so re-adding class retriggers */
+  void el.offsetWidth;
+  el.classList.add("pulse");
+  clearTimeout(ambientPulseTimer);
+  ambientPulseTimer = setTimeout(() => el.classList.remove("pulse"), 480);
+}
+
+function personaBadgeHtml(extraClass, avSize) {
+  const p = personaOf(state.mbti);
+  if (!p) return "";
+  const cls = "persona-badge" + (extraClass ? " " + extraClass : "");
+  return `<span class="${cls}" title="${esc(p.text)}">${avatarImg(p, avSize || "sm")}<span class="code">${p.code}</span><span class="dot">·</span><span class="label">${esc(p.label)}</span></span>`;
+}
+
+/* 大立绘：首页 / 结果页共用 */
+function personaStageHtml(mode) {
+  const p = personaOf(state.mbti);
+  if (!p) return "";
+  const compact = mode === "compact";
+  const cls = "persona-stage" + (compact ? " compact" : "");
+  const hint = compact ? "" : '<div class="persona-stage-hint">点中的那一位</div>';
+  return `
+    <aside class="${cls}" id="personaStage" aria-label="${esc(p.code)} ${esc(p.label)}">
+      <div class="persona-stage-ring" style="--persona-bg:${p.bg}">
+        <img class="persona-stage-av" src="${p.avatar}" alt="${esc(p.code)} ${esc(p.label)}"
+          width="300" height="360" loading="eager">
+      </div>
+      <div class="persona-stage-meta">
+        <div class="persona-stage-nick">${esc(p.label)}</div>
+        <div class="persona-stage-code">${esc(p.code)}</div>
+        ${hint}
+      </div>
+    </aside>`;
+}
+
+/* 换型 / 取消：先淡出再改 state，避免立绘突兀消失 */
+let mbtiAnimLock = false;
+function setMbti(v) {
+  if (mbtiAnimLock) return;
+  const next = state.mbti === v ? null : v;
+  const stage = document.getElementById("personaStage");
+  const needsOut = stage && state.mbti && state.mbti !== next;
+  if (needsOut) {
+    mbtiAnimLock = true;
+    stage.classList.add("out");
+    setTimeout(() => {
+      state.mbti = next;
+      mbtiAnimLock = false;
+      render();
+    }, 320);
+    return;
+  }
+  state.mbti = next;
+  render();
+}
+
+function toggleType(t) {
+  if (t === "短剧") return;
+  let cur = state.types.slice();
+  if (t === "全部") {
+    state.types = ["全部"];
+    return;
+  }
+  cur = cur.filter(x => x !== "全部");
+  if (cur.includes(t)) {
+    cur = cur.filter(x => x !== t);
+    if (cur.length === 0) cur = ["全部"];
+  } else {
+    cur.push(t);
+  }
+  state.types = cur;
+}
+
+function filterPool() {
+  /* 一期不做类型筛选：电影/电视剧/动漫混推 */
+  const pool = POOL[state.mood] || [];
+  return pool.slice();
+}
+
+function typeNames() {
+  return state.types.filter(t => t !== "全部");
+}
+
+function flavorReason(r) {
+  if (!state.mbti) return r;
+  const prefix = MBTI_FLAVOR[state.mbti] || "";
+  /* 保持理由约 10～20 字感：仅展示层前缀，出卡由 applyMbtiFilter 决定 */
+  return prefix + r;
+}
+
+/** 类型严格过滤后再按 MBTI 筛结果集（mbti_boost）；无 boost 命中时提示并暂不假洗牌 */
+function applyMbtiFilter(pool) {
+  if (!state.mbti) return { pool, hint: null };
+  // 无 MBTI：不筛。有 MBTI：只出 mbti_boost 含该项的片（改结果集）
+  const matched = pool.filter(c => Array.isArray(c.mbti_boost) && c.mbti_boost.includes(state.mbti));
+  if (matched.length === 0) {
+    return {
+      pool: [],
+      hint: `这个条件下暂时没有更贴「${state.mbti}」的片，试试换 MBTI 或去掉 MBTI`,
+    };
+  }
+  return { pool: matched, hint: null };
+}
+
+function pickCards() {
+  // 1) 不做类型筛选，按心情(+可选MBTI)出片
+  let pool = filterPool();
+  let hint = null;
+  const names = [];
+
+  if (pool.length === 0) return { cards: [], hint: "暂无匹配片源" };
+
+  // 2) MBTI：改结果集，不只洗牌 / 不只 flavorReason
+  const mb = applyMbtiFilter(pool);
+  pool = mb.pool;
+  if (mb.hint) hint = hint ? hint + "；" + mb.hint : mb.hint;
+
+  if (pool.length === 0) return { cards: [], hint: hint || "暂无匹配片源" };
+  if (state.mbti && pool.length < 3 && !hint) {
+    hint = `贴合「${state.mbti}」的暂时只有 ${pool.length} 部`;
+  }
+
+  const n = pool.length;
+  const take = Math.min(3, n);
+  const start = (state.batch * take) % n;
+  const cards = [];
+  for (let i = 0; i < take; i++) {
+    cards.push(pool[(start + i) % n]);
+  }
+  if (n <= 3 && state.batch > 0) {
+    hint = hint || "符合条件的片暂时就这些，换个类型、MBTI 或心情看看？";
+  }
+  return { cards, hint };
+}
+
+function moodObj(id) {
+  return MOODS.find(x => x.id === id);
+}
+
+function esc(s) {
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function navHtml() {
+  const persona = personaBadgeHtml("", "sm");
+  return `
+    <header class="nav">
+      <div class="nav-brand">
+        <strong>心情片单</strong>
+        <span>今晚看什么，听心情的</span>
+      </div>
+      <div class="nav-right">
+        ${persona}
+        <div class="nav-pill">电脑 · 手机都能看</div>
+      </div>
+    </header>
+  `;
+}
+
+function renderHome() {
+  applyTheme(state.mood);
+  const canGo = !!state.mood;
+
+  const moodsHtml = MOODS.map(m => `
+    <div class="mood ${state.mood === m.id ? "on" : ""}" data-mood="${m.id}" role="button" tabindex="0">
+      <span class="em">${m.emoji}</span>
+      <span class="name">${m.name}</span>
+      <i class="hint">${m.hint}</i>
+    </div>
+  `).join("");
+
+  const typesHtml = TYPE_OPTS.map(t => {
+    const isShort = t === "短剧";
+    const on = !isShort && state.types.includes(t);
+    return `<div class="chip ${on ? "on" : ""} ${isShort ? "disabled" : ""}" data-type="${t}" title="${isShort ? "短剧还在补，很快上" : ""}">${t}</div>`;
+  }).join("");
+
+  const mbtiHtml = MBTI.map(x => {
+    const p = personaOf(x);
+    return `
+    <div class="chip mbti-chip ${state.mbti === x ? "on" : ""}" data-mbti="${x}" title="${p.text}">
+      ${avatarImg(p, "chip-av")}
+      <span class="mbti-code">${x}</span>
+      <span class="mbti-persona">${esc(p.label)}</span>
+    </div>`;
+  }).join("");
+  const heroPersona = state.mbti ? (() => {
+    const p = personaOf(state.mbti);
+    return `<p class="hero-persona">${avatarImg(p, "md")}<span class="code">${p.code}</span><span> · </span><b>${esc(p.label)}</b></p>`;
+  })() : "";
+  const mbtiSelected = state.mbti
+    ? `<div class="mbti-selected-line">${personaBadgeHtml("", "sm")}<span style="font-size:0.74rem;color:var(--muted2)">再点同一型可取消</span></div>`
+    : "";
+  const stageHome = state.mbti ? personaStageHtml("home") : "";
+  const layoutCls = "home-layout" + (state.mbti ? " has-persona" : "");
+
+  const app = document.getElementById("app");
+  app.innerHTML = `
+    ${navHtml()}
+    <div class="${layoutCls}">
+      <div class="home-col">
+        <section class="hero">
+          <h1>好品味慢慢攒，<em>今晚只听心情</em></h1>
+          <p class="lead">选个心情，按<strong>小红书真人影评</strong>挑 3 部今晚就能看的——不用刷、不用纠结。</p>
+          ${heroPersona}
+        </section>
+
+        <section class="panel">
+          <div class="lab">现在的心情</div>
+          <div class="moods">${moodsHtml}</div>
+        </section>
+
+
+        <section class="panel mbti-panel ${state.mbtiOpen ? "open" : ""}" id="mbtiPanel">
+          <button type="button" class="mbti-toggle" id="mbtiToggle" aria-expanded="${state.mbtiOpen}">
+            <div class="lab">
+              点开选择 MBTI
+              <small>${state.mbti ? "已选 " + (personaOf(state.mbti) ? personaOf(state.mbti).text : state.mbti) + " · 再点可取消" : "可选，不选也行 · 各型有社区昵称与头像"}</small>
+            </div>
+            <span class="mbti-chev" aria-hidden="true">▾</span>
+          </button>
+          <div class="mbti-body">
+            <div class="mbti-grid">${mbtiHtml}</div>
+            ${mbtiSelected}
+            <p class="mbti-note">点选后右侧（手机在下方）出现半身立绘；芯片保留小头像；主氛围仍跟心情；再点同一型取消</p>
+          </div>
+        </section>
+      </div>
+
+      ${stageHome}
+
+      <div class="home-cta cta-wrap">
+        <button class="btn ${canGo ? "" : "dis"}" id="btnRec" ${canGo ? "" : "disabled"}>给我推荐</button>
+        ${canGo ? "" : '<p class="btnhint">先选个心情，按钮才会亮起来</p>'}
+      </div>
+    </div>
+
+    <footer class="foot">心情片单 · 网页演示 · 假数据可点通流程</footer>
+  `;
+
+  app.querySelectorAll("[data-mood]").forEach(el => {
+    el.addEventListener("click", () => {
+      if (state.sceneLock) return;
+      state.mood = el.dataset.mood;
+      state.batch = 0;
+      state.votes = {};
+      render();
+    });
+    el.addEventListener("keydown", e => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); el.click(); }
+    });
+  });
+
+  document.getElementById("mbtiToggle").addEventListener("click", () => {
+    if (state.sceneLock) return;
+    state.mbtiOpen = !state.mbtiOpen;
+    render();
+  });
+
+  app.querySelectorAll("[data-mbti]").forEach(el => {
+    el.addEventListener("click", () => {
+      if (state.sceneLock) return;
+      setMbti(el.dataset.mbti);
+    });
+  });
+
+  app.querySelectorAll("[data-type]").forEach(el => {
+    el.addEventListener("click", () => {
+      if (state.sceneLock) return;
+      const t = el.dataset.type;
+      if (t === "短剧") {
+        showToast("短剧还在补，很快上");
+        return;
+      }
+      toggleType(t);
+      render();
+    });
+  });
+
+  const btn = document.getElementById("btnRec");
+  if (btn && canGo) {
+    btn.addEventListener("click", () => {
+      if (state.sceneLock) return;
+      state.page = "result";
+      state.batch = 0;
+      state.votes = {};
+      state.batchHint = null;
+      render();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  }
+}
+
+function renderResult() {
+  applyTheme(state.mood);
+  const { cards, hint } = pickCards();
+  const m = moodObj(state.mood);
+  const moodName = m ? m.name : "";
+  const banner = m ? m.banner : "";
+
+  const cardsHtml = cards.length === 0
+    ? `<div class="empty-state">${esc(hint || "暂无匹配片源")}</div>`
+    : cards.map((c, i) => {
+        const key = state.mood + "-" + state.batch + "-" + i + "-" + c.t;
+        const vote = state.votes[key];
+        let poster;
+        if (c.img) {
+          poster = `<img src="posters/${c.img}.jpg" alt="${esc(c.t)}" loading="lazy">`;
+        } else {
+          const g = GRAD[i % GRAD.length];
+          poster = `<div class="poster-ph" style="background:${g}">${esc(c.t)}</div>`;
+        }
+        const go = (c.go && c.go.length)
+          ? `<div class="go">${c.go.map(g => `<a href="#" onclick="return false">${esc(g)}</a>`).join("")}</div>`
+          : "";
+        const reason = flavorReason(c.r);
+        return `
+          <article class="card" data-key="${esc(key)}">
+            <div class="poster-wrap">${poster}</div>
+            <div class="card-body">
+              <div class="title">${esc(c.t)}</div>
+              <div class="meta">${esc(c.type)}</div>
+              <div class="reason">${esc(reason)}</div>
+              ${go}
+              <div class="fb">
+                <button type="button" class="${vote === "y" ? "on" : ""}" data-vote="y">👍 准</button>
+                <button type="button" class="${vote === "n" ? "on" : ""}" data-vote="n">👎 不准</button>
+              </div>
+            </div>
+          </article>
+        `;
+      }).join("");
+
+  const showHint = state.batchHint || hint;
+  const tags = [];
+  if (moodName) tags.push({ t: moodName, accent: true, persona: false });
+  const pers = personaOf(state.mbti);
+  if (pers) tags.push({ t: pers.text, accent: false, persona: true, pers });
+
+  const stageResult = state.mbti ? personaStageHtml("compact") : "";
+  const bannerCls = "result-banner" + (state.mbti ? " has-persona" : "");
+
+  const app = document.getElementById("app");
+  app.innerHTML = `
+    ${navHtml()}
+
+    <div class="${bannerCls}">
+      <div class="result-banner-main">
+        <div class="tags">
+          ${tags.map(x => {
+            const cls = "tag" + (x.accent ? " accent" : "") + (x.persona ? " persona" : "");
+            const av = x.persona && x.pers ? avatarImg(x.pers, "sm") : "";
+            return `<span class="${cls}">${av}${esc(x.t)}</span>`;
+          }).join("")}
+        </div>
+        <h2>${esc(moodName)}的夜晚，这 3 部给你</h2>
+        <p class="subline">${esc(banner)}</p>
+      </div>
+      ${stageResult}
+    </div>
+
+    <div class="result-toolbar">
+      <div class="left">
+        <h3>为你挑的片</h3>
+      </div>
+      <div class="left">
+        ${cards.length ? '<button class="btn sm" id="btnBatch">换一批</button>' : ""}
+        <button class="btn ghost sm" id="btnBack">改条件</button>
+      </div>
+    </div>
+
+    ${showHint ? `<div class="batch-hint">${esc(showHint)}</div>` : ""}
+
+    <div class="wall">${cardsHtml}</div>
+
+    <div class="note">
+      <div class="nt">有什么想说的？</div>
+      <div class="row">
+        <input type="text" id="fbInput" maxlength="80" placeholder="一句话就行，比如「想要更多老电影」">
+        <button type="button" class="submit" id="fbSubmit">提交</button>
+      </div>
+      <small>匿名反馈，不落库、不收手机号</small>
+    </div>
+
+    <footer class="foot">心情片单 · 网页演示 · 假数据可点通流程</footer>
+  `;
+
+  document.getElementById("btnBack").addEventListener("click", goHome);
+  const btnBatch = document.getElementById("btnBatch");
+  if (btnBatch) {
+    btnBatch.addEventListener("click", () => {
+      if (state.sceneLock) return;
+      state.batch += 1;
+      state.votes = {};
+      state.batchHint = null;
+      const pool = filterPool();
+      const full = POOL[state.mood] || [];
+      if ((pool.length || full.length) <= 3) {
+        state.batchHint = "这个心情的片暂时就这些，换个类型或心情看看？";
+      }
+      render();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  }
+
+  app.querySelectorAll(".card").forEach(card => {
+    const key = card.dataset.key;
+    card.querySelectorAll("[data-vote]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        if (state.sceneLock) return;
+        const v = btn.dataset.vote;
+        if (state.votes[key] === v) delete state.votes[key];
+        else state.votes[key] = v;
+        render();
+      });
+    });
+  });
+
+  document.getElementById("fbSubmit").addEventListener("click", () => {
+    if (state.sceneLock) return;
+    const input = document.getElementById("fbInput");
+    showToast("收到了");
+    if (input) input.value = "";
+  });
+}
+
+function goHome() {
+  if (state.sceneLock) return;
+  state.page = "home";
+  state.batchHint = null;
+  render();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+let toastTimer = null;
+function showToast(msg) {
+  const wrap = document.getElementById("toast");
+  wrap.querySelector(".toast-msg").textContent = msg;
+  wrap.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => wrap.classList.remove("show"), 1800);
+}
+
+function render() {
+  if (state.page === "result") renderResult();
+  else renderHome();
+}
+
+render();
+</script>
+</body>
+</html>

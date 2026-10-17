@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img">
+  <defs>
+    <radialGradient id="shine" cx="35%" cy="28%" r="65%">
+      <stop offset="0%" stop-color="#fff" stop-opacity="0.22"/>
+      <stop offset="55%" stop-color="#fff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <g>
+    <rect width="128" height="128" fill="#a78bfa"/>
+    <rect width="128" height="128" fill="url(#shine)"/>
+    
+  <ellipse cx="64" cy="118" rx="42" ry="28" fill="#453560"/>
+  <ellipse cx="64" cy="60" rx="28" ry="32" fill="#f0c9a8"/>
+  <!-- spiky hair -->
+  <path d="M36,55 L30,28 L42,40 L48,18 L58,38 L64,14 L72,38 L80,20 L88,42 L98,30 L92,55 Z" fill="#5b4a7a"/>
+  
+        <path d="M40,49 L50,45 L54,50 L58,46" stroke="#1a1520" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+        <path d="M70,47 L88,44" stroke="#1a1520" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+        
+  
+        <circle cx="48" cy="58" r="3.2" fill="#1a1520"/>
+        <circle cx="80" cy="58" r="3.2" fill="#1a1520"/>
+        <circle cx="47" cy="57" r="1" fill="#fff" opacity="0.7"/>
+        <circle cx="79" cy="57" r="1" fill="#fff" opacity="0.7"/>
+        
+  <path d="M50,74 Q64,86 78,74" stroke="#1a1520" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+  <!-- lightning bolt prop -->
+  <g transform="translate(100,70)">
+    <path d="M2,-12 L-6,2 L0,2 L-4,14 L10,-2 L2,-2 Z" fill="#fcd34d" stroke="#1a1520" stroke-width="1.2"/>
+  </g>
+
+  </g>
+</svg>

@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img">
+  <defs>
+    <radialGradient id="shine" cx="35%" cy="28%" r="65%">
+      <stop offset="0%" stop-color="#fff" stop-opacity="0.22"/>
+      <stop offset="55%" stop-color="#fff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <g>
+    <rect width="128" height="128" fill="#6ee7a8"/>
+    <rect width="128" height="128" fill="url(#shine)"/>
+    
+  <ellipse cx="64" cy="118" rx="42" ry="28" fill="#3a5c40"/>
+  <ellipse cx="64" cy="60" rx="28" ry="30" fill="#f0c9a8"/>
+  <!-- fluffy hair -->
+  <path d="M34,58 Q28,28 50,26 Q64,18 78,26 Q100,28 94,58 L88,50 Q64,36 40,50 Z" fill="#f59e0b"/>
+  <!-- dog ear hood -->
+  <ellipse cx="28" cy="48" rx="12" ry="18" fill="#fbbf24" transform="rotate(-15 28 48)"/>
+  <ellipse cx="100" cy="48" rx="12" ry="18" fill="#fbbf24" transform="rotate(15 100 48)"/>
+  <ellipse cx="28" cy="50" rx="6" ry="10" fill="#fce7c2" transform="rotate(-15 28 50)"/>
+  <ellipse cx="100" cy="50" rx="6" ry="10" fill="#fce7c2" transform="rotate(15 100 50)"/>
+  
+        <path d="M42,50 Q50,45 58,50" stroke="#1a1520" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <path d="M70,50 Q78,45 86,50" stroke="#1a1520" stroke-width="2" fill="none" stroke-linecap="round"/>
+        
+  
+        <circle cx="48" cy="58" r="3.2" fill="#1a1520"/>
+        <circle cx="80" cy="58" r="3.2" fill="#1a1520"/>
+        <circle cx="47" cy="57" r="1" fill="#fff" opacity="0.7"/>
+        <circle cx="79" cy="57" r="1" fill="#fff" opacity="0.7"/>
+        
+  
+    <ellipse cx="46" cy="66" rx="6" ry="3.5" fill="#f0a090" opacity="0.45"/>
+    <ellipse cx="82" cy="66" rx="6" ry="3.5" fill="#f0a090" opacity="0.45"/>
+    
+  <path d="M50,74 Q64,86 78,74" stroke="#1a1520" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+  <!-- paw print badge -->
+  <g transform="translate(64,108)">
+    <circle cx="0" cy="0" r="5" fill="#fff" opacity="0.35"/>
+    <circle cx="-4" cy="-5" r="2" fill="#fff" opacity="0.35"/>
+    <circle cx="4" cy="-5" r="2" fill="#fff" opacity="0.35"/>
+    <circle cx="-6" cy="-1" r="1.8" fill="#fff" opacity="0.35"/>
+    <circle cx="6" cy="-1" r="1.8" fill="#fff" opacity="0.35"/>
+  </g>
+
+  </g>
+</svg>

@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img">
+  <defs>
+    <radialGradient id="shine" cx="35%" cy="28%" r="65%">
+      <stop offset="0%" stop-color="#fff" stop-opacity="0.22"/>
+      <stop offset="55%" stop-color="#fff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <g>
+    <rect width="128" height="128" fill="#fcd34d"/>
+    <rect width="128" height="128" fill="url(#shine)"/>
+    
+  <ellipse cx="64" cy="118" rx="42" ry="28" fill="#422006"/>
+  <ellipse cx="64" cy="56" rx="28" ry="32" fill="#f0c9a8"/>
+  <!-- sporty hair -->
+  <path d="M36,50 L32,28 L48,38 L56,18 L68,36 L78,20 L90,40 L98,28 L92,52 L84,46 Q64,34 44,46 Z" fill="#292524"/>
+  
+        <path d="M42,48 L58,44" stroke="#1a1520" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <path d="M70,44 L86,48" stroke="#1a1520" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        
+  
+        <circle cx="48" cy="55" r="3.2" fill="#1a1520"/>
+        <circle cx="80" cy="55" r="3.2" fill="#1a1520"/>
+        <circle cx="47" cy="54" r="1" fill="#fff" opacity="0.7"/>
+        <circle cx="79" cy="54" r="1" fill="#fff" opacity="0.7"/>
+        
+  <path d="M50,70 Q64,82 78,70" stroke="#1a1520" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+  <!-- drill -->
+  <g transform="translate(100,72) rotate(20)">
+    <rect x="-18" y="-6" width="22" height="12" rx="2" fill="#ea580c" stroke="#1a1520" stroke-width="1.2"/>
+    <rect x="2" y="-3" width="16" height="6" rx="1" fill="#a8a29e"/>
+    <polygon points="18,-1 28,0 18,3" fill="#78716c"/>
+    <rect x="-14" y="6" width="8" height="14" rx="1" fill="#292524"/>
+    <circle cx="-8" cy="-6" r="3" fill="#fcd34d"/>
+  </g>
+
+  </g>
+</svg>

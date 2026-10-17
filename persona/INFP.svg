@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img">
+  <defs>
+    <radialGradient id="shine" cx="35%" cy="28%" r="65%">
+      <stop offset="0%" stop-color="#fff" stop-opacity="0.22"/>
+      <stop offset="55%" stop-color="#fff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <g>
+    <rect width="128" height="128" fill="#6ee7a8"/>
+    <rect width="128" height="128" fill="url(#shine)"/>
+    
+  <ellipse cx="64" cy="118" rx="42" ry="28" fill="#3d5a48"/>
+  <ellipse cx="64" cy="58" rx="28" ry="30" fill="#f0c9a8"/>
+  <!-- soft bangs -->
+  <path d="M34,58 Q30,24 64,22 Q98,24 94,58 L88,48 Q64,34 40,48 Z" fill="#4a7a5c"/>
+  <path d="M40,42 Q50,50 64,44 Q78,50 88,42" fill="#4a7a5c"/>
+  
+        <path d="M42,48 Q50,43 58,48" stroke="#1a1520" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <path d="M70,48 Q78,43 86,48" stroke="#1a1520" stroke-width="2" fill="none" stroke-linecap="round"/>
+        
+  
+        <circle cx="48" cy="56" r="3.2" fill="#1a1520"/>
+        <circle cx="80" cy="56" r="3.2" fill="#1a1520"/>
+        <circle cx="47" cy="55" r="1" fill="#fff" opacity="0.7"/>
+        <circle cx="79" cy="55" r="1" fill="#fff" opacity="0.7"/>
+        
+  
+    <ellipse cx="46" cy="66" rx="6" ry="3.5" fill="#f0a090" opacity="0.45"/>
+    <ellipse cx="82" cy="66" rx="6" ry="3.5" fill="#f0a090" opacity="0.45"/>
+    
+  <path d="M54,71 Q64,78 74,71" stroke="#1a1520" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <!-- butterfly -->
+  <g transform="translate(94,42)">
+    <ellipse cx="-6" cy="0" rx="8" ry="6" fill="#f9a8d4" transform="rotate(-20)" opacity="0.95"/>
+    <ellipse cx="6" cy="0" rx="8" ry="6" fill="#c4b5fd" transform="rotate(20)" opacity="0.95"/>
+    <ellipse cx="-5" cy="6" rx="5" ry="4" fill="#fda4af" opacity="0.9"/>
+    <ellipse cx="5" cy="6" rx="5" ry="4" fill="#a5b4fc" opacity="0.9"/>
+    <line x1="0" y1="-4" x2="0" y2="10" stroke="#1a1520" stroke-width="1.5"/>
+    <circle cx="0" cy="2" r="2" fill="#1a1520"/>
+  </g>
+
+  </g>
+</svg>
