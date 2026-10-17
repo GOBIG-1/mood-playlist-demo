@@ -1097,6 +1097,84 @@ const EMBED_HOOKS = {
   emptyState: null,      // 6 无结果空态
 };
 
+/* 选情绪词 OR 手写场景：二者任一即可点推荐 */
+function canRecommend() {
+  if (state.mood) return true;
+  if ((state.sceneText || "").trim()) return true;
+  if (state.scenePreset) {
+    const p = SCENE_PRESETS.find(s => s.id === state.scenePreset);
+    if (p && p.mood) return true;
+  }
+  return false;
+}
+
+/* 假映射：中式口语关键词 → mood id（真 Embedding 一周后替换） */
+function mapSceneTextToMood(raw) {
+  const t = String(raw || "").trim().toLowerCase();
+  if (!t) return null;
+  for (const m of MOODS) {
+    if (t.includes(m.name) || t.includes(m.id)) return m.id;
+  }
+  const rules = [
+    { mood: "tired",   keys: ["班味", "加班", "累", "困", "疲惫", "歇会儿", "不想动脑"] },
+    { mood: "annoyed", keys: ["烦", "气", "宣泄", "怒", "炸毛", "不爽"] },
+    { mood: "empty",   keys: ["空", "没劲", "空虚", "麻木", "空洞"] },
+    { mood: "cry",     keys: ["哭", "想哭", "虐", "泪", "催泪"] },
+    { mood: "hype",    keys: ["燃", "嗨", "打鸡血", "爽", "兴奋", "状态拉满"] },
+    { mood: "anxiety", keys: ["焦虑", "紧张", "备考", "压力", "紧绷"] },
+    { mood: "bored",   keys: ["无聊", "没事干", "闲得慌", "打发时间"] },
+  ];
+  for (const r of rules) {
+    if (r.keys.some(k => t.includes(k))) return r.mood;
+  }
+  return null;
+}
+
+/**
+ * resolveMood：chip > preset.mood > sceneText 关键词假映射 > 默认 tired
+ * 挂到 EMBED_HOOKS.mapMood，假实现可整段替换为真向量回填
+ */
+function resolveMood() {
+  if (state.mood) {
+    return { mood: state.mood, source: "chip", guessed: false };
+  }
+  if (state.scenePreset) {
+    const preset = SCENE_PRESETS.find(s => s.id === state.scenePreset);
+    if (preset && preset.mood) {
+      return { mood: preset.mood, source: "preset", guessed: false };
+    }
+  }
+  const text = (state.sceneText || "").trim();
+  if (text) {
+    const mapped = mapSceneTextToMood(text);
+    if (mapped) {
+      return { mood: mapped, source: "text", guessed: true };
+    }
+  }
+  return { mood: "tired", source: "default", guessed: true };
+}
+EMBED_HOOKS.mapMood = resolveMood;
+
+function updateRecButton() {
+  const btn = document.getElementById("btnRec");
+  const wrap = document.querySelector(".home-cta");
+  if (!btn || !wrap) return;
+  const ok = canRecommend();
+  btn.disabled = !ok;
+  btn.classList.toggle("dis", !ok);
+  let hint = wrap.querySelector(".btnhint");
+  if (ok) {
+    if (hint) hint.remove();
+  } else if (!hint) {
+    hint = document.createElement("p");
+    hint.className = "btnhint";
+    hint.textContent = "选个情绪词，或自己写一句";
+    wrap.appendChild(hint);
+  } else {
+    hint.textContent = "选个情绪词，或自己写一句";
+  }
+}
+
 const SCENE_PRESETS = [
   { id: "", label: "或选一个快捷场景", mood: null },
   { id: "overtime", label: "刚加完班，只想看点不用动脑的", mood: "tired" },
@@ -1324,6 +1402,8 @@ const state = {
   mbtiOpen: false,
   types: ["全部"],
   scenePreset: "",
+  sceneText: "",
+  moodGuessed: false,
   batch: 0,
   votes: {},
   sceneLock: false,
@@ -1554,7 +1634,7 @@ function navHtml() {
 
 function renderHome() {
   applyTheme(state.mood);
-  const canGo = !!state.mood;
+  const canGo = canRecommend();
 
   const moodsHtml = MOODS.map(m => `
     <div class="mood ${state.mood === m.id ? "on" : ""}" data-mood="${m.id}" role="button" tabindex="0">
@@ -1601,17 +1681,17 @@ function renderHome() {
         </section>
 
         <section class="panel">
-          <div class="lab">现在的心情</div>
+          <div class="lab">选一个情绪词</div>
           <div class="moods">${moodsHtml}</div>
         </section>
 
         <section class="panel scene-panel">
-          <div class="lab">更具体一点</div>
-          <input type="text" id="sceneInput" class="scene-input" maxlength="80" placeholder="比如：刚加完班，只想看不用动脑的片" value="${esc(state.sceneText || "")}">
+          <div class="lab">或者自己写情绪</div>
+          <input type="text" id="sceneInput" class="scene-input" maxlength="80" placeholder="写不出上面那些词？随便写，比如班味好重" value="${esc(state.sceneText || "")}">
           <select id="sceneSelect" class="scene-select" aria-label="场景快捷选项">
             ${SCENE_PRESETS.map(s => `<option value="${s.id}" ${state.scenePreset === s.id ? "selected" : ""}>${esc(s.label)}</option>`).join("")}
           </select>
-          <p class="scene-hint">可自己写，或点下面快捷选项；以后接向量检索，现在先假映射。</p>
+          <p class="scene-hint">选词和手写二选一即可；真向量检索以后接，现在先假映射。</p>
         </section>
 
         <section class="panel mbti-panel ${state.mbtiOpen ? "open" : ""}" id="mbtiPanel">
@@ -1634,7 +1714,7 @@ function renderHome() {
 
       <div class="home-cta cta-wrap">
         <button class="btn ${canGo ? "" : "dis"}" id="btnRec" ${canGo ? "" : "disabled"}>给我推荐</button>
-        ${canGo ? "" : '<p class="btnhint">先选个心情，按钮才会亮起来</p>'}
+        ${canGo ? "" : '<p class="btnhint">选个情绪词，或自己写一句</p>'}
       </div>
     </div>
 
@@ -1661,6 +1741,8 @@ function renderHome() {
       if (state.sceneLock) return;
       state.sceneText = sceneInput.value;
       EMBED_HOOKS.sceneText = state.sceneText.trim() || null;
+      /* 只更新按钮，不整页 render，避免输入丢焦点 */
+      updateRecButton();
     });
   }
   const sceneSel = document.getElementById("sceneSelect");
@@ -1710,13 +1792,22 @@ function renderHome() {
   });
 
   const btn = document.getElementById("btnRec");
-  if (btn && canGo) {
+  if (btn) {
     btn.addEventListener("click", () => {
       if (state.sceneLock) return;
+      if (!canRecommend()) return;
+      const resolved = resolveMood();
+      state.mood = resolved.mood;
+      state.moodGuessed = !!resolved.guessed;
       state.page = "result";
       state.batch = 0;
       state.votes = {};
-      state.batchHint = null;
+      state.batchHint = resolved.guessed
+        ? "先按相近心情猜的，以后接语义检索"
+        : null;
+      if (resolved.guessed) {
+        showToast("先按相近心情猜的，以后接语义检索");
+      }
       render();
       window.scrollTo({ top: 0, behavior: "smooth" });
     });
