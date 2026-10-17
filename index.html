@@ -382,6 +382,22 @@
     outline: none;
   }
   .scene-select:focus { border-color: var(--accent); }
+
+  .scene-input {
+    width: 100%;
+    margin-top: 10px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.12);
+    background: rgba(0,0,0,0.28);
+    color: var(--text);
+    font-size: 0.92rem;
+    outline: none;
+    box-sizing: border-box;
+  }
+  .scene-input::placeholder { color: var(--muted2); }
+  .scene-input:focus { border-color: var(--accent); }
+
   .scene-hint {
     margin: 8px 0 0;
     font-size: 0.72rem;
@@ -1082,7 +1098,7 @@ const EMBED_HOOKS = {
 };
 
 const SCENE_PRESETS = [
-  { id: "", label: "用一句话描述现在的状态（可选）", mood: null },
+  { id: "", label: "或选一个快捷场景", mood: null },
   { id: "overtime", label: "刚加完班，只想看点不用动脑的", mood: "tired" },
   { id: "friday_vent", label: "周五晚上，想爽快宣泄一下", mood: "annoyed" },
   { id: "rain_coffee", label: "雨天配咖啡，想慢慢陪着看", mood: "empty" },
@@ -1589,6 +1605,14 @@ function renderHome() {
           <div class="moods">${moodsHtml}</div>
         </section>
 
+        <section class="panel scene-panel">
+          <div class="lab">更具体一点</div>
+          <input type="text" id="sceneInput" class="scene-input" maxlength="80" placeholder="比如：刚加完班，只想看不用动脑的片" value="${esc(state.sceneText || "")}">
+          <select id="sceneSelect" class="scene-select" aria-label="场景快捷选项">
+            ${SCENE_PRESETS.map(s => `<option value="${s.id}" ${state.scenePreset === s.id ? "selected" : ""}>${esc(s.label)}</option>`).join("")}
+          </select>
+          <p class="scene-hint">可自己写，或点下面快捷选项；以后接向量检索，现在先假映射。</p>
+        </section>
 
         <section class="panel mbti-panel ${state.mbtiOpen ? "open" : ""}" id="mbtiPanel">
           <button type="button" class="mbti-toggle" id="mbtiToggle" aria-expanded="${state.mbtiOpen}">
@@ -1631,6 +1655,14 @@ function renderHome() {
   });
 
 
+  const sceneInput = document.getElementById("sceneInput");
+  if (sceneInput) {
+    sceneInput.addEventListener("input", () => {
+      if (state.sceneLock) return;
+      state.sceneText = sceneInput.value;
+      EMBED_HOOKS.sceneText = state.sceneText.trim() || null;
+    });
+  }
   const sceneSel = document.getElementById("sceneSelect");
   if (sceneSel) {
     sceneSel.addEventListener("change", () => {
@@ -1638,7 +1670,10 @@ function renderHome() {
       const id = sceneSel.value;
       state.scenePreset = id;
       const preset = SCENE_PRESETS.find(s => s.id === id);
-      EMBED_HOOKS.sceneText = preset && preset.id ? preset.label : null;
+      if (preset && preset.id) {
+        state.sceneText = preset.label;
+        EMBED_HOOKS.sceneText = preset.label;
+      }
       if (preset && preset.mood) {
         state.mood = preset.mood;
         state.batch = 0;
