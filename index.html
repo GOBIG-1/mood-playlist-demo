@@ -368,6 +368,27 @@
     text-align: left;
     padding: 0;
   }
+
+  .scene-panel { margin-top: 0; }
+  .scene-select {
+    width: 100%;
+    margin-top: 10px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.12);
+    background: rgba(0,0,0,0.28);
+    color: var(--text);
+    font-size: 0.92rem;
+    outline: none;
+  }
+  .scene-select:focus { border-color: var(--accent); }
+  .scene-hint {
+    margin: 8px 0 0;
+    font-size: 0.72rem;
+    color: var(--muted2);
+    line-height: 1.4;
+  }
+
   .mbti-toggle .lab { margin: 0; flex: 1; }
   .mbti-chev {
     width: 28px; height: 28px;
@@ -1049,6 +1070,27 @@
 <div id="toast"><span class="toast-msg"></span></div>
 
 <script>
+
+/* 假场景下拉：后续一周接真 Embedding 时，按这 6 个口子替换 */
+const EMBED_HOOKS = {
+  sceneText: null,       // 1 用户场景文案
+  embedRequest: null,    // 2 调 Embedding API
+  poolVectors: null,     // 3 片池向量
+  topK: null,            // 4 相似度 topK
+  mapMood: null,         // 5 回填/映射心情
+  emptyState: null,      // 6 无结果空态
+};
+
+const SCENE_PRESETS = [
+  { id: "", label: "用一句话描述现在的状态（可选）", mood: null },
+  { id: "overtime", label: "刚加完班，只想看点不用动脑的", mood: "tired" },
+  { id: "friday_vent", label: "周五晚上，想爽快宣泄一下", mood: "annoyed" },
+  { id: "rain_coffee", label: "雨天配咖啡，想慢慢陪着看", mood: "empty" },
+  { id: "need_cry", label: "憋一天了，想哭一场", mood: "cry" },
+  { id: "need_hype", label: "状态拉满，想看燃的", mood: "hype" },
+  { id: "exam_pressure", label: "备考高压，需要打鸡血但不紧绷", mood: "anxiety" },
+];
+
 const MOODS = [
   /* 色板依据：色彩-情绪研究综述（红↔激情/兴奋；黄橙↔愉悦；青绿↔平静；蓝↔悲伤；灰↔疲惫）。
      烦躁/焦虑在产品里是「换个心情」，主强调色跟情绪词，氛围渐变可略偏疏解。
@@ -1265,6 +1307,7 @@ const state = {
   mbti: null,
   mbtiOpen: false,
   types: ["全部"],
+  scenePreset: "",
   batch: 0,
   votes: {},
   sceneLock: false,
@@ -1586,6 +1629,24 @@ function renderHome() {
       if (e.key === "Enter" || e.key === " ") { e.preventDefault(); el.click(); }
     });
   });
+
+
+  const sceneSel = document.getElementById("sceneSelect");
+  if (sceneSel) {
+    sceneSel.addEventListener("change", () => {
+      if (state.sceneLock) return;
+      const id = sceneSel.value;
+      state.scenePreset = id;
+      const preset = SCENE_PRESETS.find(s => s.id === id);
+      EMBED_HOOKS.sceneText = preset && preset.id ? preset.label : null;
+      if (preset && preset.mood) {
+        state.mood = preset.mood;
+        state.batch = 0;
+        state.votes = {};
+      }
+      render();
+    });
+  }
 
   document.getElementById("mbtiToggle").addEventListener("click", () => {
     if (state.sceneLock) return;
