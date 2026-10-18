@@ -1148,6 +1148,101 @@
     .bb-flip.flipped .bb-front { animation: bbFade 0.5s ease; }
   }
   @keyframes bbFade { from { opacity: 0; } to { opacity: 1; } }
+  /* ===== 投稿 / 意见（发到 bot 邮箱，失败存本地补发） ===== */
+  .sub-panel {
+    position: relative;
+    overflow: hidden;
+    background:
+      linear-gradient(135deg, color-mix(in srgb, var(--accent) 16%, transparent), transparent 62%),
+      var(--surface);
+  }
+  .sub-panel .sub-head {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    flex-wrap: wrap;
+  }
+  .sub-panel .sub-title { font-weight: 700; font-size: 1rem; margin: 0; }
+  .sub-panel .sub-title span { color: var(--accent); transition: color var(--ease-mood); }
+  .sub-panel .sub-desc { color: var(--muted); font-size: 0.8rem; margin: 4px 0 0; }
+  .sub-toggle {
+    font-family: inherit; font-weight: 600; font-size: 0.86rem;
+    padding: 9px 16px; border-radius: 999px; cursor: pointer;
+    background: transparent; color: var(--text);
+    border: 1px solid var(--accent);
+    transition: background 0.15s, border-color var(--ease-mood);
+  }
+  .sub-toggle:hover { background: var(--accent-soft); }
+  .sub-form { display: none; margin-top: 14px; }
+  .sub-panel.open .sub-form { display: block; }
+  .sub-panel.open .sub-toggle { display: none; }
+  .sub-field { margin-bottom: 12px; min-width: 0; }
+  .sub-field label {
+    display: block; font-size: 0.78rem; font-weight: 600; color: var(--muted); margin-bottom: 6px;
+  }
+  .sub-field label i { font-style: normal; color: var(--accent); margin-left: 2px; }
+  .sub-field label small { font-weight: 400; color: var(--muted2); margin-left: 4px; }
+  .sub-in {
+    width: 100%; max-width: 100%; box-sizing: border-box;
+    font-family: inherit; font-size: 0.92rem;
+    padding: 11px 14px; border-radius: 10px;
+    border: 1px solid var(--border); background: rgba(0,0,0,0.35);
+    color: var(--text); outline: none;
+  }
+  .sub-in::placeholder { color: var(--muted2); }
+  .sub-in:focus { border-color: var(--accent); }
+  .sub-in.err { border-color: #ff6b6b; box-shadow: 0 0 0 2px rgba(255,107,107,0.22); }
+  textarea.sub-in { resize: vertical; min-height: 64px; line-height: 1.5; }
+  .sub-err { display: none; color: #ff8f8f; font-size: 0.74rem; margin-top: 5px; }
+  .sub-field.has-err .sub-err { display: block; }
+  .sub-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .sub-tag {
+    font-family: inherit; font-size: 0.8rem; cursor: pointer;
+    padding: 6px 11px; border-radius: 999px;
+    border: 1px solid var(--border); background: rgba(255,255,255,0.04); color: var(--muted);
+  }
+  .sub-tag.on { border-color: var(--accent); background: var(--accent-soft); color: var(--text); }
+  .sub-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 4px; }
+  .sub-actions .btn.sm { padding: 11px 22px; }
+  .sub-actions .sub-cancel {
+    background: none; border: none; color: var(--muted2); font-family: inherit;
+    font-size: 0.82rem; cursor: pointer; padding: 6px;
+  }
+  .sub-panel .sub-note, .note .sub-note { display: block; margin-top: 10px; color: var(--muted2); font-size: 0.72rem; }
+  .sub-done {
+    display: none; margin-top: 12px; padding: 12px 14px; border-radius: 12px;
+    background: var(--accent-soft); color: var(--text); font-size: 0.88rem;
+  }
+  .sub-panel.done .sub-done { display: block; }
+  .sub-panel.done .sub-form { display: none; }
+  .sub-panel.done .sub-toggle { display: none; }
+  .sub-panel.queued .sub-done { background: rgba(255,255,255,0.06); border: 1px dashed var(--accent); }
+  .op-status { min-height: 0; margin-top: 8px; font-size: 0.82rem; color: var(--muted); }
+  .op-status.show { padding: 8px 12px; border-radius: 10px; }
+  .op-status.ok { background: var(--accent-soft); color: var(--text); }
+  .op-status.queued { background: rgba(255,255,255,0.06); border: 1px dashed var(--accent); color: var(--text); }
+  .fb.locked [data-vote] { cursor: default; }
+  .fb.locked [data-vote]:not(.on) { opacity: 0.45; }
+  .sub-done .sub-cancel { color: var(--text); text-decoration: underline; text-underline-offset: 3px; background: none; padding: 0 0 0 6px; }
+  .home-sub { order: 4; }
+  @media (min-width: 960px) {
+    .home-layout.has-persona .home-sub { grid-column: 1; grid-row: 3; order: unset; }
+  }
+  .opinion-panel .row { display: flex; gap: 8px; min-width: 0; }
+  .opinion-panel .row .sub-in { flex: 1; min-width: 0; }
+  .opinion-panel .submit {
+    flex: 0 0 auto; font-family: inherit; font-weight: 600; font-size: 0.88rem;
+    padding: 11px 16px; border-radius: 10px; border: none;
+    background: var(--accent); color: var(--cta-text); cursor: pointer;
+    transition: background var(--ease-mood), color var(--ease-mood);
+  }
+  .opinion-panel .submit:disabled { opacity: 0.6; cursor: default; }
+  .note { box-sizing: border-box; max-width: 100%; }
+  .note .row { min-width: 0; }
+  .note input { min-width: 0; }
+  @media (min-width: 760px) {
+    .result-extras { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start; }
+    .result-extras .note { margin-top: 36px; }
+    .result-extras .sub-panel { margin-top: 36px; margin-bottom: 0; }
+  }
 </style>
 </head>
 <body>
@@ -1793,10 +1888,12 @@ function renderHome() {
         <button type="button" class="btn ghost btn-bb" id="btnBlind" title="不用选心情也能开；选了就只在该心情里抽">🎁 开个盲盒</button>
         ${canGo ? "" : '<p class="btnhint">选个情绪词，或自己写一句</p>'}
       </div>
+      ${submitPanelHtml("home-sub")}
     </div>
 
     <footer class="foot">心情片单 · 网页演示 · 假数据可点通流程</footer>
   `;
+  bindSubmitPanel();
 
   app.querySelectorAll("[data-mood]").forEach(el => {
     el.addEventListener("click", () => {
@@ -1915,9 +2012,9 @@ function cardHtml(c, i, key, vote) {
           <div class="meta">${esc(c.type)}</div>
           <div class="reason">${esc(reason)}</div>
           ${go}
-          <div class="fb">
-            <button type="button" class="${vote === "y" ? "on" : ""}" data-vote="y">👍 准</button>
-            <button type="button" class="${vote === "n" ? "on" : ""}" data-vote="n">👎 不准</button>
+          <div class="fb ${vote ? "locked" : ""}">
+            <button type="button" class="${vote === "y" ? "on" : ""}" data-vote="y" ${vote ? 'aria-disabled="true"' : ""}>👍 ${vote === "y" ? "已投 · 准" : "准"}</button>
+            <button type="button" class="${vote === "n" ? "on" : ""}" data-vote="n" ${vote ? 'aria-disabled="true"' : ""}>👎 ${vote === "n" ? "已投 · 不准" : "不准"}</button>
           </div>
         </div>
       </article>
@@ -1979,7 +2076,7 @@ function renderBlindbox() {
   const scopeText = scopeMood ? `只在「${scopeMood.emoji} ${scopeMood.name}」里抽` : "全片池随机抽";
   const fromMood = pick ? moodObj(pick.mood) : null;
   const key = pick ? "bb-" + pick.mood + "-" + pick.c.t : "";
-  const front = pick ? cardHtml(pick.c, 0, key, state.votes[key]) : "";
+  const front = pick ? cardHtml(pick.c, 0, key, state.votes[key] || priorVote(pick.c.t, pick.mood)) : "";
   const flipCls = "bb-flip" + (state.bbFlipped ? " flipped no-anim" : "");
 
   const app = document.getElementById("app");
@@ -2042,15 +2139,14 @@ function renderBlindbox() {
     render();
   });
 
-  /* 准 / 不准：就地切换，不整页 render（避免翻牌状态闪回） */
+  /* 准 / 不准：投过即锁定；就地更新，不整页 render（避免翻牌状态闪回） */
   app.querySelectorAll(".bb-front .card [data-vote]").forEach(btn => {
     btn.addEventListener("click", () => {
+      if (state.votes[key] || priorVote(pick.c.t, pick.mood)) return;
       const v = btn.dataset.vote;
-      if (state.votes[key] === v) delete state.votes[key];
-      else state.votes[key] = v;
-      btn.parentElement.querySelectorAll("[data-vote]").forEach(b => {
-        b.classList.toggle("on", state.votes[key] === b.dataset.vote);
-      });
+      state.votes[key] = v;
+      sendVote(pick.c, pick.mood, v);
+      lockVoteButtons(btn.parentElement, v);
     });
   });
 }
@@ -2066,7 +2162,7 @@ function renderResult() {
     ? `<div class="empty-state">${esc(hint || "暂无匹配片源")}</div>`
     : cards.map((c, i) => {
         const key = state.mood + "-" + state.batch + "-" + i + "-" + c.t;
-        return cardHtml(c, i, key, state.votes[key]);
+        return cardHtml(c, i, key, state.votes[key] || priorVote(c.t, state.mood));
       }).join("");
 
   const showHint = state.batchHint || hint;
@@ -2111,13 +2207,9 @@ function renderResult() {
 
     <div class="wall">${cardsHtml}</div>
 
-    <div class="note">
-      <div class="nt">有什么想说的？</div>
-      <div class="row">
-        <input type="text" id="fbInput" maxlength="80" placeholder="一句话就行，比如「想要更多老电影」">
-        <button type="button" class="submit" id="fbSubmit">提交</button>
-      </div>
-      <small>匿名反馈，不落库、不收手机号</small>
+    <div class="result-extras">
+      ${opinionHtml()}
+      ${submitPanelHtml("")}
     </div>
 
     <footer class="foot">心情片单 · 网页演示 · 假数据可点通流程</footer>
@@ -2141,25 +2233,270 @@ function renderResult() {
     });
   }
 
+  const cardsByKey = {};
+  cards.forEach((c, i) => { cardsByKey[state.mood + "-" + state.batch + "-" + i + "-" + c.t] = c; });
   app.querySelectorAll(".card").forEach(card => {
     const key = card.dataset.key;
     card.querySelectorAll("[data-vote]").forEach(btn => {
       btn.addEventListener("click", () => {
         if (state.sceneLock) return;
+        const c = cardsByKey[key];
+        if (state.votes[key] || (c && priorVote(c.t, state.mood))) return;   // 投过就锁定
         const v = btn.dataset.vote;
-        if (state.votes[key] === v) delete state.votes[key];
-        else state.votes[key] = v;
-        render();
+        state.votes[key] = v;
+        if (c) sendVote(c, state.mood, v);
+        lockVoteButtons(btn.parentElement, v);   // 就地更新，不整页 render，避免闪烁
       });
     });
   });
 
-  document.getElementById("fbSubmit").addEventListener("click", () => {
-    if (state.sceneLock) return;
-    const input = document.getElementById("fbInput");
-    showToast("收到了");
-    if (input) input.value = "";
+  bindOpinion();
+  bindSubmitPanel();
+}
+
+/* ===== 投稿 / 意见 / 准·不准 → 发到 bot 邮箱 =====
+   渠道：FormSubmit AJAX（免费、无需账号、无后端）。
+   失败/断网 → 存 localStorage 队列，下次打开或恢复联网时补发。 */
+const FEEDBACK_ENDPOINT = "https://formsubmit.co/ajax/ad0e871c8a0ba720e9e27535a92bae48";
+const FB_QUEUE_KEY = "mp_fb_queue_v1";
+const FB_VOTE_KEY = "mp_vote_sent_v1";
+const FB_SUBJECT = { submit: "投稿", opinion: "意见", y: "准", n: "不准" };
+
+function fbLoad(k, d) {
+  try { const v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; }
+}
+function fbSave(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+
+function fbCtx() {
+  const m = moodObj(state.mood);
+  return {
+    "当前心情": m ? m.name : "",
+    "手写情绪": (state.sceneText || "").trim(),
+    "MBTI": state.mbti || "",
+    "页面": state.page,
+  };
+}
+
+function fbPayload(kind, fields) {
+  const now = new Date();
+  const p = Object.assign({
+    _subject: "[心情片单] " + (FB_SUBJECT[kind] || kind) + (fields["片名"] ? " · " + fields["片名"] : ""),
+    _template: "table",
+    _captcha: "false",
+    "类型": FB_SUBJECT[kind] || kind,
+  }, fields, fbCtx(), {
+    "时间": now.toLocaleString("zh-CN", { hour12: false }),
+    "来源": location.origin + location.pathname,
   });
+  p._id = "fb-" + now.getTime().toString(36) + "-" + Math.random().toString(36).slice(2, 7);
+  return p;
+}
+
+async function fbPost(p) {
+  const body = Object.assign({}, p);
+  delete body._id;
+  if (!navigator.onLine) throw new Error("offline");
+  const ctl = typeof AbortController !== "undefined" ? new AbortController() : null;
+  const timer = ctl ? setTimeout(() => ctl.abort(), 12000) : null;
+  try {
+    const res = await fetch(FEEDBACK_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Accept": "application/json" },
+      body: JSON.stringify(body),
+      signal: ctl ? ctl.signal : undefined,
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || String(data.success) !== "true") throw new Error(data.message || ("HTTP " + res.status));
+    return true;
+  } finally { if (timer) clearTimeout(timer); }
+}
+
+function fbEnqueue(p) {
+  const q = fbLoad(FB_QUEUE_KEY, []);
+  if (!q.some(x => x._id === p._id)) q.push(p);
+  fbSave(FB_QUEUE_KEY, q.slice(-50));   // 最多留 50 条，防止无限堆积
+}
+
+/* 发送；失败入队。返回 "sent" | "queued" */
+async function sendFeedback(kind, fields) {
+  const p = fbPayload(kind, fields);
+  try { await fbPost(p); return "sent"; }
+  catch (e) { fbEnqueue(p); return "queued"; }
+}
+
+let fbFlushing = false;
+async function flushFeedbackQueue() {
+  if (fbFlushing || !navigator.onLine) return;
+  fbFlushing = true;
+  try {
+    let q = fbLoad(FB_QUEUE_KEY, []);
+    for (const p of q.slice()) {
+      try {
+        await fbPost(p);
+        q = fbLoad(FB_QUEUE_KEY, []).filter(x => x._id !== p._id);
+        fbSave(FB_QUEUE_KEY, q);
+      } catch (e) { break; }   // 还是失败就等下次
+    }
+  } finally { fbFlushing = false; }
+}
+window.addEventListener("online", flushFeedbackQueue);
+
+/* 准/不准：同一部片在同一心情下只能投一次（本机记录），投过即锁定高亮、不再发送 */
+function voteMoodName(moodId) {
+  const m = moodObj(moodId);
+  return m ? m.name : (moodId || "");
+}
+function priorVote(title, moodId) {
+  const pre = title + "|" + voteMoodName(moodId) + "|";
+  const hit = fbLoad(FB_VOTE_KEY, []).find(x => typeof x === "string" && x.startsWith(pre));
+  return hit ? hit.slice(pre.length) : undefined;
+}
+function lockVoteButtons(wrap, v) {
+  if (!wrap) return;
+  wrap.classList.add("locked");
+  wrap.querySelectorAll("[data-vote]").forEach(b => {
+    const on = b.dataset.vote === v;
+    b.classList.toggle("on", on);
+    b.setAttribute("aria-disabled", "true");
+    b.textContent = b.dataset.vote === "y" ? (on ? "👍 已投 · 准" : "👍 准") : (on ? "👎 已投 · 不准" : "👎 不准");
+  });
+}
+function sendVote(c, moodId, v) {
+  const moodName = voteMoodName(moodId);
+  if (priorVote(c.t, moodId)) return;
+  const sig = c.t + "|" + moodName + "|" + v;
+  const sent = fbLoad(FB_VOTE_KEY, []);
+  sent.push(sig);
+  fbSave(FB_VOTE_KEY, sent.slice(-300));
+  sendFeedback(v, { "片名": c.t, "心情": moodName, "结论": v === "y" ? "👍 准" : "👎 不准", "推荐理由": c.r || "" });
+}
+
+function submitPanelHtml(extraCls) {
+  const m = moodObj(state.mood);
+  const prefill = (state.sceneText || "").trim() || (m ? m.name + "，" + m.hint : "");
+  const tagsHtml = MOODS.map(x => `<button type="button" class="sub-tag ${state.mood === x.id ? "on" : ""}" data-subtag="${x.id}">${x.emoji} ${esc(x.name)}</button>`).join("");
+  return `
+    <section class="panel sub-panel ${extraCls || ""}" id="subPanel">
+      <div class="sub-head">
+        <div>
+          <p class="sub-title">🎬 推荐一部<span>适合这种心情</span>的片</p>
+          <p class="sub-desc">你的私藏也许正好接住别人的今晚，免审核。</p>
+        </div>
+        <button type="button" class="sub-toggle" id="subToggle">我来推荐</button>
+      </div>
+      <form class="sub-form" id="subForm" novalidate>
+        <div class="sub-field" id="subTitleField">
+          <label for="subTitle">片名<i>*</i></label>
+          <input class="sub-in" id="subTitle" maxlength="40" placeholder="比如《海街日记》" autocomplete="off">
+          <div class="sub-err">先写个片名吧</div>
+        </div>
+        <div class="sub-field" id="subMoodField">
+          <label for="subMood">什么心情适合看<i>*</i><small>一句话</small></label>
+          <input class="sub-in" id="subMood" maxlength="60" placeholder="比如：加完班脑子空空的时候" value="${esc(prefill)}" autocomplete="off">
+          <div class="sub-err">一句话说说什么心情适合看</div>
+        </div>
+        <div class="sub-field">
+          <label>心情标签<small>可选，可多选</small></label>
+          <div class="sub-tags">${tagsHtml}</div>
+        </div>
+        <div class="sub-actions">
+          <button type="submit" class="btn sm" id="subSend">投给片池</button>
+          <button type="button" class="sub-cancel" id="subCancel">先不了</button>
+        </div>
+        <small class="sub-note">匿名提交，不收手机号；断网会先存在本机，下次打开自动补发。</small>
+      </form>
+      <div class="sub-done" id="subDone"><span id="subDoneMsg">收到啦，下周会进片池 🍿</span> <button type="button" class="sub-cancel" id="subAgain">再推荐一部</button></div>
+    </section>`;
+}
+
+function bindSubmitPanel() {
+  const panel = document.getElementById("subPanel");
+  if (!panel) return;
+  const form = document.getElementById("subForm");
+  const title = document.getElementById("subTitle");
+  const mood = document.getElementById("subMood");
+  document.getElementById("subToggle").addEventListener("click", () => {
+    panel.classList.add("open");
+    title.focus();
+  });
+  document.getElementById("subCancel").addEventListener("click", () => panel.classList.remove("open"));
+  document.getElementById("subAgain").addEventListener("click", () => {
+    panel.classList.remove("done", "queued");
+    panel.classList.add("open");
+    title.value = "";
+    title.focus();
+  });
+  panel.querySelectorAll("[data-subtag]").forEach(b => {
+    b.addEventListener("click", () => b.classList.toggle("on"));
+  });
+  const clearErr = (el, field) => el.addEventListener("input", () => {
+    el.classList.remove("err"); document.getElementById(field).classList.remove("has-err");
+  });
+  clearErr(title, "subTitleField");
+  clearErr(mood, "subMoodField");
+  let busy = false;
+  form.addEventListener("submit", async e => {
+    e.preventDefault();
+    if (busy) return;
+    const t = title.value.trim();
+    const d = mood.value.trim();
+    let bad = null;
+    if (!d) { mood.classList.add("err"); document.getElementById("subMoodField").classList.add("has-err"); bad = mood; }
+    if (!t) { title.classList.add("err"); document.getElementById("subTitleField").classList.add("has-err"); bad = title; }
+    if (bad) { bad.focus(); showToast(!t ? "片名还没填" : "写一句心情描述"); return; }
+    const tags = Array.from(panel.querySelectorAll(".sub-tag.on")).map(b => {
+      const m = moodObj(b.dataset.subtag); return m ? m.name : b.dataset.subtag;
+    });
+    busy = true;
+    const btn = document.getElementById("subSend");
+    btn.disabled = true; btn.textContent = "发送中…";
+    const r = await sendFeedback("submit", { "片名": t, "心情描述": d, "心情标签": tags.join("、") || "（未选）" });
+    busy = false;
+    btn.disabled = false; btn.textContent = "投给片池";
+    panel.classList.remove("open");
+    panel.classList.add("done");
+    panel.classList.toggle("queued", r !== "sent");
+    document.getElementById("subDoneMsg").textContent =
+      r === "sent" ? "收到啦，下周会进片池 🍿" : "已存本机，联网后自动补发 📦";
+    showToast(r === "sent" ? "收到啦，下周会进片池" : "已存本机，联网后自动补发");
+  });
+}
+
+function opinionHtml() {
+  return `
+    <div class="note opinion-panel" id="opinionPanel">
+      <div class="nt">对推荐有什么想说的？</div>
+      <div class="row">
+        <input type="text" class="sub-in" id="fbInput" maxlength="200" placeholder="一句话就行，比如「想要更多老电影」">
+        <button type="button" class="submit" id="fbSubmit">提交</button>
+      </div>
+      <div class="op-status" id="opStatus" role="status" aria-live="polite"></div>
+      <small class="sub-note">匿名反馈，不收手机号；会直接发给我们，断网先存本机</small>
+    </div>`;
+}
+
+function bindOpinion() {
+  const btn = document.getElementById("fbSubmit");
+  const input = document.getElementById("fbInput");
+  if (!btn || !input) return;
+  let busy = false;
+  const go = async () => {
+    if (state.sceneLock || busy) return;
+    const v = input.value.trim();
+    if (!v) { input.classList.add("err"); input.focus(); showToast("先写一句再提交"); return; }
+    busy = true; btn.disabled = true;
+    const st = document.getElementById("opStatus");
+    st.className = "op-status"; st.textContent = "发送中…";
+    const r = await sendFeedback("opinion", { "意见": v });
+    busy = false; btn.disabled = false;
+    input.value = "";
+    st.className = "op-status show " + (r === "sent" ? "ok" : "queued");
+    st.textContent = r === "sent" ? "收到了，谢谢你 🙏" : "已存本机，联网后自动补发 📦";
+    showToast(r === "sent" ? "收到了，谢谢你" : "已存本机，联网后自动补发");
+  };
+  btn.addEventListener("click", go);
+  input.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); go(); } });
+  input.addEventListener("input", () => input.classList.remove("err"));
 }
 
 function goHome() {
@@ -2176,7 +2513,7 @@ function showToast(msg) {
   wrap.querySelector(".toast-msg").textContent = msg;
   wrap.classList.add("show");
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => wrap.classList.remove("show"), 1800);
+  toastTimer = setTimeout(() => wrap.classList.remove("show"), 3500);
 }
 
 function render() {
@@ -2186,6 +2523,7 @@ function render() {
 }
 
 render();
+setTimeout(flushFeedbackQueue, 1500);
 </script>
 </body>
 </html>
