@@ -1077,6 +1077,77 @@
     color: var(--muted2);
     text-align: center;
   }
+
+  /* ===== 盲盒 ===== */
+  .btn.btn-bb { font-size: 0.98rem; }
+  .bb-head { margin: 12px 0 18px; }
+  .bb-from.hidden { display: none; }
+  .bb-head h2 { font-size: 1.4rem; margin: 8px 0 4px; }
+  .bb-head .subline { color: var(--muted); font-size: 0.9rem; }
+  .bb-stage {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 18px; margin: 6px 0 28px;
+  }
+  .bb-flip {
+    width: 100%; max-width: 320px;
+    perspective: 1200px;
+  }
+  .bb-inner {
+    display: grid;
+    transform-style: preserve-3d;
+    transition: transform 0.5s cubic-bezier(.2,.7,.3,1);
+  }
+  .bb-flip.flipped .bb-inner { transform: rotateY(180deg); }
+  .bb-flip.no-anim .bb-inner { transition: none; }
+  .bb-face {
+    grid-area: 1 / 1;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+  .bb-front { transform: rotateY(180deg); }
+  .bb-front .card, .bb-front .card:hover { transform: none; }
+  .bb-back {
+    cursor: pointer;
+    border-radius: var(--radius);
+    border: 2px solid var(--accent);
+    min-height: 420px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 14px; text-align: center; padding: 24px;
+    background:
+      repeating-linear-gradient(45deg, var(--accent-soft) 0 12px, transparent 12px 24px),
+      radial-gradient(circle at 50% 40%, var(--accent-glow), transparent 65%),
+      var(--bg2);
+    box-shadow: 0 12px 40px var(--accent-glow), inset 0 0 40px rgba(0,0,0,0.45);
+    transition: box-shadow var(--ease-mood), border-color var(--ease-mood);
+  }
+  .bb-back:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+  .bb-q {
+    width: 120px; height: 120px; border-radius: 22px;
+    display: grid; place-items: center;
+    font-size: 4.2rem; font-weight: 800; color: var(--cta-text);
+    background: var(--accent);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.45);
+    position: relative;
+  }
+  .bb-q::before { /* 原创丝带：竖条 */
+    content: ""; position: absolute; left: 50%; top: 0; bottom: 0; width: 14px;
+    transform: translateX(-50%); background: rgba(255,255,255,0.35);
+  }
+  .bb-q span { position: relative; }
+  .bb-back .bb-tip { font-size: 0.95rem; color: var(--text); font-weight: 600; }
+  .bb-back .bb-scope { font-size: 0.78rem; color: var(--muted); }
+  .bb-actions {
+    display: flex; flex-wrap: wrap; justify-content: center; gap: 12px;
+    width: 100%; max-width: 420px;
+    opacity: 0; pointer-events: none; transition: opacity 0.3s ease 0.25s;
+  }
+  .bb-actions.show { opacity: 1; pointer-events: auto; }
+  .bb-actions .btn { flex: 1 1 140px; }
+  @media (prefers-reduced-motion: reduce) {
+    .bb-inner { transition: none; }
+    .bb-flip.flipped .bb-front { animation: bbFade 0.5s ease; }
+  }
+  @keyframes bbFade { from { opacity: 0; } to { opacity: 1; } }
 </style>
 </head>
 <body>
@@ -1409,6 +1480,11 @@ const state = {
   sceneLock: false,
   batchHint: null,
   _themeKey: "",
+  /* 盲盒 */
+  bbScope: null,     // null = 全片池；否则心情 id
+  bbPick: null,      // { c, mood }
+  bbLastT: null,     // 上一次抽到的片名，避免连续重复
+  bbFlipped: false,
 };
 
 (function initScene() {
@@ -1714,6 +1790,7 @@ function renderHome() {
 
       <div class="home-cta cta-wrap">
         <button class="btn ${canGo ? "" : "dis"}" id="btnRec" ${canGo ? "" : "disabled"}>给我推荐</button>
+        <button type="button" class="btn ghost btn-bb" id="btnBlind" title="不用选心情也能开；选了就只在该心情里抽">🎁 开个盲盒</button>
         ${canGo ? "" : '<p class="btnhint">选个情绪词，或自己写一句</p>'}
       </div>
     </div>
@@ -1791,6 +1868,9 @@ function renderHome() {
     });
   });
 
+  const btnBlind = document.getElementById("btnBlind");
+  if (btnBlind) btnBlind.addEventListener("click", openBlindbox);
+
   const btn = document.getElementById("btnRec");
   if (btn) {
     btn.addEventListener("click", () => {
@@ -1814,6 +1894,167 @@ function renderHome() {
   }
 }
 
+/* 结果页 / 盲盒共用的片卡渲染 */
+function cardHtml(c, i, key, vote) {
+    let poster;
+    if (c.img) {
+      poster = `<img src="posters/${c.img}.jpg" alt="${esc(c.t)}" loading="lazy">`;
+    } else {
+      const g = GRAD[i % GRAD.length];
+      poster = `<div class="poster-ph" style="background:${g}">${esc(c.t)}</div>`;
+    }
+    const go = (c.go && c.go.length)
+      ? `<div class="go">${c.go.map(g => `<a href="#" onclick="return false">${esc(g)}</a>`).join("")}</div>`
+      : "";
+    const reason = flavorReason(c.r);
+    return `
+      <article class="card" data-key="${esc(key)}">
+        <div class="poster-wrap">${poster}</div>
+        <div class="card-body">
+          <div class="title">${esc(c.t)}</div>
+          <div class="meta">${esc(c.type)}</div>
+          <div class="reason">${esc(reason)}</div>
+          ${go}
+          <div class="fb">
+            <button type="button" class="${vote === "y" ? "on" : ""}" data-vote="y">👍 准</button>
+            <button type="button" class="${vote === "n" ? "on" : ""}" data-vote="n">👎 不准</button>
+          </div>
+        </div>
+      </article>
+    `;
+}
+
+/* ===== 盲盒：本地片池随机抽 1 部，不接外部 API ===== */
+function blindScope() {
+  /* 已点芯片 / 预设 / 手写能解析出心情 → 只在该心情里抽；否则全片池 */
+  if (!canRecommend()) return null;
+  const r = resolveMood();
+  return r && r.source !== "default" && POOL[r.mood] ? r.mood : null;
+}
+
+function blindPool(scope) {
+  const ids = scope ? [scope] : Object.keys(POOL);
+  const seen = new Set();
+  const out = [];
+  ids.forEach(id => {
+    (POOL[id] || []).forEach(c => {
+      if (!c || c.type === "短剧") return;          // 短剧置灰：不抽
+      if (seen.has(c.t)) return;                     // 跨心情同名去重
+      seen.add(c.t);
+      out.push({ c, mood: id });
+    });
+  });
+  return out;
+}
+
+function drawBlind() {
+  const pool = blindPool(state.bbScope);
+  if (!pool.length) { state.bbPick = null; return null; }
+  let cand = pool;
+  if (pool.length > 1 && state.bbLastT) {
+    cand = pool.filter(x => x.c.t !== state.bbLastT);
+  }
+  const pick = cand[Math.floor(Math.random() * cand.length)];
+  state.bbPick = pick;
+  state.bbLastT = pick.c.t;
+  state.bbFlipped = false;
+  return pick;
+}
+EMBED_HOOKS.blindDraw = drawBlind;
+
+function openBlindbox() {
+  if (state.sceneLock) return;
+  state.bbScope = blindScope();
+  state.bbLastT = null;
+  drawBlind();
+  state.page = "blindbox";
+  render();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function renderBlindbox() {
+  const scopeMood = moodObj(state.bbScope);
+  applyTheme(state.bbScope || state.mood);
+  const pick = state.bbPick;
+  const scopeText = scopeMood ? `只在「${scopeMood.emoji} ${scopeMood.name}」里抽` : "全片池随机抽";
+  const fromMood = pick ? moodObj(pick.mood) : null;
+  const key = pick ? "bb-" + pick.mood + "-" + pick.c.t : "";
+  const front = pick ? cardHtml(pick.c, 0, key, state.votes[key]) : "";
+  const flipCls = "bb-flip" + (state.bbFlipped ? " flipped no-anim" : "");
+
+  const app = document.getElementById("app");
+  app.innerHTML = `
+    ${navHtml()}
+    <section class="bb-head">
+      <div class="tags">
+        <span class="tag accent">🎁 盲盒</span>
+        <span class="tag">${esc(scopeText)}</span>
+        ${fromMood && !scopeMood ? `<span class="tag bb-from ${state.bbFlipped ? "" : "hidden"}">来自「${esc(fromMood.name)}」</span>` : ""}
+      </div>
+      <h2>今晚看什么，交给运气</h2>
+      <p class="subline">点一下卡片翻开，不满意就再抽一次。</p>
+    </section>
+
+    ${pick ? `
+    <div class="bb-stage">
+      <div class="${flipCls}" id="bbFlip">
+        <div class="bb-inner">
+          <div class="bb-face bb-back" id="bbBack" role="button" tabindex="0" aria-label="翻开盲盒">
+            <div class="bb-q"><span>?</span></div>
+            <div class="bb-tip">点我翻开</div>
+            <div class="bb-scope">${esc(scopeText)}</div>
+          </div>
+          <div class="bb-face bb-front" aria-hidden="${state.bbFlipped ? "false" : "true"}">${front}</div>
+        </div>
+      </div>
+      <div class="bb-actions ${state.bbFlipped ? "show" : ""}" id="bbActions">
+        <button class="btn sm" id="btnBbAgain">🎁 再抽一次</button>
+        <button class="btn ghost sm" id="btnBbBack">回去选心情</button>
+      </div>
+    </div>` : `
+    <div class="wall"><div class="empty-state">盲盒空了，回去选个心情看看？</div></div>
+    <div class="bb-actions show"><button class="btn ghost sm" id="btnBbBack">回去选心情</button></div>`}
+
+    <footer class="foot">心情片单 · 网页演示 · 盲盒只从本地片池随机抽</footer>
+  `;
+
+  document.getElementById("btnBbBack").addEventListener("click", goHome);
+  if (!pick) return;
+
+  const flip = document.getElementById("bbFlip");
+  const back = document.getElementById("bbBack");
+  const reveal = () => {
+    if (state.bbFlipped) return;
+    state.bbFlipped = true;
+    flip.classList.add("flipped");
+    flip.querySelector(".bb-front").setAttribute("aria-hidden", "false");
+    document.getElementById("bbActions").classList.add("show");
+    const from = app.querySelector(".bb-from");
+    if (from) from.classList.remove("hidden");
+  };
+  back.addEventListener("click", reveal);
+  back.addEventListener("keydown", e => {
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); reveal(); }
+  });
+
+  document.getElementById("btnBbAgain").addEventListener("click", () => {
+    drawBlind();
+    render();
+  });
+
+  /* 准 / 不准：就地切换，不整页 render（避免翻牌状态闪回） */
+  app.querySelectorAll(".bb-front .card [data-vote]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const v = btn.dataset.vote;
+      if (state.votes[key] === v) delete state.votes[key];
+      else state.votes[key] = v;
+      btn.parentElement.querySelectorAll("[data-vote]").forEach(b => {
+        b.classList.toggle("on", state.votes[key] === b.dataset.vote);
+      });
+    });
+  });
+}
+
 function renderResult() {
   applyTheme(state.mood);
   const { cards, hint } = pickCards();
@@ -1825,33 +2066,7 @@ function renderResult() {
     ? `<div class="empty-state">${esc(hint || "暂无匹配片源")}</div>`
     : cards.map((c, i) => {
         const key = state.mood + "-" + state.batch + "-" + i + "-" + c.t;
-        const vote = state.votes[key];
-        let poster;
-        if (c.img) {
-          poster = `<img src="posters/${c.img}.jpg" alt="${esc(c.t)}" loading="lazy">`;
-        } else {
-          const g = GRAD[i % GRAD.length];
-          poster = `<div class="poster-ph" style="background:${g}">${esc(c.t)}</div>`;
-        }
-        const go = (c.go && c.go.length)
-          ? `<div class="go">${c.go.map(g => `<a href="#" onclick="return false">${esc(g)}</a>`).join("")}</div>`
-          : "";
-        const reason = flavorReason(c.r);
-        return `
-          <article class="card" data-key="${esc(key)}">
-            <div class="poster-wrap">${poster}</div>
-            <div class="card-body">
-              <div class="title">${esc(c.t)}</div>
-              <div class="meta">${esc(c.type)}</div>
-              <div class="reason">${esc(reason)}</div>
-              ${go}
-              <div class="fb">
-                <button type="button" class="${vote === "y" ? "on" : ""}" data-vote="y">👍 准</button>
-                <button type="button" class="${vote === "n" ? "on" : ""}" data-vote="n">👎 不准</button>
-              </div>
-            </div>
-          </article>
-        `;
+        return cardHtml(c, i, key, state.votes[key]);
       }).join("");
 
   const showHint = state.batchHint || hint;
@@ -1966,6 +2181,7 @@ function showToast(msg) {
 
 function render() {
   if (state.page === "result") renderResult();
+  else if (state.page === "blindbox") renderBlindbox();
   else renderHome();
 }
 
