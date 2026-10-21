@@ -701,23 +701,30 @@
   .go {
     display: flex;
     flex-wrap: wrap;
+    align-items: center;
     gap: 6px;
     margin-top: 12px;
   }
-  .go a {
+  .go a.go-plat {
     font-size: 0.72rem;
-    color: var(--cta-text);
+    color: var(--cta-text, #fff);
     background: var(--accent);
     padding: 5px 10px;
     border-radius: 999px;
     text-decoration: none;
     font-weight: 600;
-    transition: background var(--ease-mood), color var(--ease-mood), filter 0.15s;
+    transition: filter 0.15s, opacity 0.15s, background var(--ease-mood), color var(--ease-mood);
   }
-  .go a:hover { filter: brightness(1.1); }
-  .go .go-prefix { color: var(--muted2); margin-right: 0.15em; }
-  .go .go-plat { display: inline; }
-  .go .go-sep { color: var(--muted2); margin: 0 0.15em; }
+  .go a.go-plat:hover { filter: brightness(1.1); }
+  .go span.go-plat {
+    font-size: 0.72rem;
+    color: var(--muted);
+    background: color-mix(in srgb, var(--muted2) 22%, transparent);
+    padding: 5px 10px;
+    border-radius: 999px;
+    font-weight: 600;
+  }
+  .go .go-prefix { color: var(--muted2); margin-right: 0.15em; font-size: 0.85em; }
   .go.go-empty { color: var(--muted); font-size: 0.85em; }
   .fb {
     display: flex;
@@ -1995,6 +2002,24 @@ function renderHome() {
   }
 }
 
+/* 平台搜索页（片名 query）；无片 ID 时的 JustWatch 式 fallback */
+const GO_SEARCH = {
+  "腾讯视频": (t) => "https://v.qq.com/x/search/?q=" + encodeURIComponent(t),
+  "B站": (t) => "https://search.bilibili.com/all?keyword=" + encodeURIComponent(t),
+  "爱奇艺": (t) => "https://so.iqiyi.com/so/q_" + encodeURIComponent(t),
+  "优酷": (t) => "https://so.youku.com/search_video/q_" + encodeURIComponent(t),
+  "Netflix": (t) => "https://www.netflix.com/search?q=" + encodeURIComponent(t),
+  "Apple TV+": (t) => "https://tv.apple.com/search?term=" + encodeURIComponent(t),
+  // disneyplus.com/search 在部分地区直连 404，用 Google site 搜仍能落到正版页
+  "迪士尼+": (t) => "https://www.google.com/search?q=" + encodeURIComponent(t + " site:disneyplus.com"),
+};
+function goPlatHtml(plat, title) {
+  const fn = GO_SEARCH[plat];
+  if (!fn) return `<span class="go-plat">${esc(plat)}</span>`;
+  const href = fn(title);
+  return `<a class="go-plat" href="${esc(href)}" target="_blank" rel="noopener noreferrer">${esc(plat)}</a>`;
+}
+
 /* 结果页 / 盲盒共用的片卡渲染 */
 function cardHtml(c, i, key, vote) {
     let poster;
@@ -2005,7 +2030,7 @@ function cardHtml(c, i, key, vote) {
       poster = `<div class="poster-ph" style="background:${g}">${esc(c.t)}</div>`;
     }
     const go = (c.go && c.go.length)
-      ? `<div class="go"><span class="go-prefix">去哪看：</span>${c.go.map((g, gi) => `${gi ? '<span class="go-sep"> / </span>' : ''}<span class="go-plat">${esc(g)}</span>`).join("")}</div>`
+      ? `<div class="go"><span class="go-prefix">去哪看：</span>${c.go.map((g) => goPlatHtml(g, c.t)).join("")}</div>`
       : `<div class="go go-empty">暂无核对过的国内正版，先记片名</div>`;
     const reason = flavorReason(c.r);
     return `
