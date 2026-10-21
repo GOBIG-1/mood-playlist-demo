@@ -715,6 +715,10 @@
     transition: background var(--ease-mood), color var(--ease-mood), filter 0.15s;
   }
   .go a:hover { filter: brightness(1.1); }
+  .go .go-prefix { color: var(--muted2); margin-right: 0.15em; }
+  .go .go-plat { display: inline; }
+  .go .go-sep { color: var(--muted2); margin: 0 0.15em; }
+  .go.go-empty { color: var(--muted); font-size: 0.85em; }
   .fb {
     display: flex;
     gap: 8px;
@@ -1355,31 +1359,31 @@ const MOODS = [
   /* 色板依据：色彩-情绪研究综述（红↔激情/兴奋；黄橙↔愉悦；青绿↔平静；蓝↔悲伤；灰↔疲惫）。
      烦躁/焦虑在产品里是「换个心情」，主强调色跟情绪词，氛围渐变可略偏疏解。
      soft/glow/mid 提高透明度，切换心情时氛围必须一眼可辨。 */
-  { id: "tired",   emoji: "😮‍💨", name: "累了", hint: "不费脑，慢慢看",
+  { id: "tired",   emoji: "😮‍💨", name: "累了", hint: "不费脑，短一点也行",
     theme: { accent: "#bea385", soft: "rgba(122,93,60,0.43)", glow: "rgba(118,87,50,0.48)", mid: "rgba(116,78,61,0.36)", gradA: "#2b1f12", cta: "#bea385", ctaText: "#1f1306" },
     banner: "累了就歇会儿，挑部不费脑的慢慢看。",
     tone: "soft" },
-  { id: "annoyed", emoji: "😤",   name: "烦躁", hint: "来点轻松解压的",
+  { id: "annoyed", emoji: "😤",   name: "烦躁", hint: "冲冲班味，来点轻松的",
     theme: { accent: "#89c1c4", soft: "rgba(44,111,114,0.45)", glow: "rgba(28,106,110,0.5)", mid: "rgba(47,100,83,0.37)", gradA: "#0c2628", cta: "#89c1c4", ctaText: "#031a1b" },
     banner: "气鼓鼓也没关系，笑一场就松了。",
     tone: "bright" },
-  { id: "empty",   emoji: "🫥",   name: "空虚", hint: "找部能躲进去的",
+  { id: "empty",   emoji: "🫥",   name: "空虚", hint: "想躲进去，或来点纯爱甜的",
     theme: { accent: "#d79fb4", soft: "rgba(136,79,102,0.46)", glow: "rgba(132,71,96,0.52)", mid: "rgba(126,70,66,0.38)", gradA: "#301923", cta: "#d79fb4", ctaText: "#211017" },
     banner: "空一点的时候，电影刚好能把你接住。",
     tone: "mist" },
-  { id: "cry",     emoji: "🥲",   name: "想哭", hint: "来部催泪的",
+  { id: "cry",     emoji: "🥲",   name: "想哭", hint: "emo 了就哭一场",
     theme: { accent: "#89a4cc", soft: "rgba(72,100,142,0.45)", glow: "rgba(64,94,140,0.52)", mid: "rgba(96,78,121,0.38)", gradA: "#172233", cta: "#89a4cc", ctaText: "#0d1624" },
     banner: "想哭就哭吧，好片子陪你把眼泪哭干。",
     tone: "tender" },
-  { id: "hype",    emoji: "🥳",   name: "想嗨", hint: "燃起来，爽到底",
+  { id: "hype",    emoji: "🥳",   name: "想嗨", hint: "燃起来，打个鸡血",
     theme: { accent: "#ffa074", soft: "rgba(162,65,1,0.51)", glow: "rgba(153,61,2,0.6)", mid: "rgba(161,22,56,0.43)", gradA: "#35190c", cta: "#ffa074", ctaText: "#21110a" },
     banner: "今晚不躺平——燃起来，爽到底。",
     tone: "fire" },
-  { id: "anxiety", emoji: "😰",   name: "焦虑", hint: "节奏慢，不紧绷",
+  { id: "anxiety", emoji: "😰",   name: "焦虑", hint: "别紧绷，先下饭缓缓",
     theme: { accent: "#9bbea1", soft: "rgba(72,110,80,0.44)", glow: "rgba(64,105,73,0.49)", mid: "rgba(41,99,95,0.36)", gradA: "#17261a", cta: "#9bbea1", ctaText: "#0c1a0f" },
     banner: "先把节奏放慢，不紧绷的片子更懂你。",
     tone: "calm" },
-  { id: "bored",   emoji: "🥱",   name: "无聊", hint: "来点新鲜有劲的",
+  { id: "bored",   emoji: "🥱",   name: "无聊", hint: "闷坏了，来点新鲜的",
     theme: { accent: "#d4b45c", soft: "rgba(122,96,4,0.49)", glow: "rgba(115,90,5,0.57)", mid: "rgba(139,63,1,0.41)", gradA: "#2b2001", cta: "#d4b45c", ctaText: "#1b1505" },
     banner: "无聊最怕无聊——来点新鲜有劲的。",
     tone: "neon" },
@@ -1476,9 +1480,9 @@ const POOL = {
   tired: [
     { t: "海蒂和爷爷", type: "电影", img: "25958717", r: "山风和奶酪，脑子放空", go: ["腾讯视频", "优酷"] , mbti: ["INFJ","INFP","ISFJ"], mbti_boost: ["INFJ","INFP","ISFJ"]},
     { t: "龙猫", type: "动漫", img: "1291560", r: "下雨天撑伞，慢慢陪着你", go: ["B站"] , mbti: ["INFJ","INFP","ISFP"], mbti_boost: ["INFJ","INFP","ISFP"]},
-    { t: "完美的日子", type: "电影", img: "35902857", r: "扫厕所的日常，也有光", go: ["腾讯视频"] , mbti: ["INFJ","ISFP"], mbti_boost: ["INFJ","ISFP"]},
+    { t: "完美的日子", type: "电影", img: "35902857", r: "扫厕所的日常，节奏很慢", go: ["腾讯视频"] , mbti: ["INFJ","ISFP"], mbti_boost: ["INFJ","ISFP"]},
     { t: "白熊咖啡馆", type: "动漫", img: "10527294", r: "一集一杯咖啡，慢悠悠", go: ["B站"] , mbti: ["INFP","ISFJ"], mbti_boost: ["INFP","ISFJ"]},
-    { t: "千与千寻", type: "动漫", img: "1291561", r: "神隐世界里慢慢找回自己", go: ["B站", "爱奇艺"] , mbti: ["INFJ","INFP"], mbti_boost: ["INFJ","INFP"]},
+    { t: "千与千寻", type: "动漫", img: "1291561", r: "神隐世界里慢慢逛", go: ["B站", "爱奇艺"] , mbti: ["INFJ","INFP"], mbti_boost: ["INFJ","INFP"]},
     { t: "深夜食堂", type: "电视剧", img: "3991933", r: "一碗热食，把心慢慢焐热", go: ["B站", "腾讯视频"] , mbti: [], mbti_boost: []},
     { t: "请回答1988", type: "电视剧", img: "26302614", r: "邻里烟火，慢慢把心安放", go: ["腾讯视频", "爱奇艺"] , mbti: ["INFJ","INFP","ISFJ"], mbti_boost: ["INFJ","INFP","ISFJ"]},
     { t: "孤独的美食家", type: "电视剧", img: "7065168", r: "一集一餐，独自也不慌", go: ["B站"] , mbti: [], mbti_boost: []},
@@ -1750,14 +1754,14 @@ function pickCards() {
   let hint = null;
   const names = [];
 
-  if (pool.length === 0) return { cards: [], hint: "暂无匹配片源" };
+  if (pool.length === 0) return { cards: [], hint: "这个心情还在补片，换个心情试试" };
 
   // 2) MBTI：改结果集，不只洗牌 / 不只 flavorReason
   const mb = applyMbtiFilter(pool);
   pool = mb.pool;
   if (mb.hint) hint = hint ? hint + "；" + mb.hint : mb.hint;
 
-  if (pool.length === 0) return { cards: [], hint: hint || "暂无匹配片源" };
+  if (pool.length === 0) return { cards: [], hint: hint || "这个心情还在补片，换个心情试试" };
   if (state.mbti && pool.length < 3 && !hint) {
     hint = `贴合「${state.mbti}」的暂时只有 ${pool.length} 部`;
   }
@@ -1770,7 +1774,7 @@ function pickCards() {
     cards.push(pool[(start + i) % n]);
   }
   if (n <= 3 && state.batch > 0) {
-    hint = hint || "符合条件的片暂时就这些，换个类型、MBTI 或心情看看？";
+    hint = hint || "符合条件的就这些了，换个心情或去掉 MBTI 再试试？";
   }
   return { cards, hint };
 }
@@ -1847,7 +1851,7 @@ function renderHome() {
       <div class="home-col">
         <section class="hero">
           <h1>好品味慢慢攒，<em>今晚只听心情</em></h1>
-          <p class="lead">选个心情，按<strong>小红书真人影评</strong>挑 3 部今晚就能看的——不用刷、不用纠结。</p>
+          <p class="lead">选个心情，<strong>3 秒 3 部</strong>——班味太重、emo、想下饭，都能对上。按<strong>小红书真人影评</strong>挑今晚就能看的，不用刷、不用纠结。</p>
           ${heroPersona}
         </section>
 
@@ -2001,8 +2005,8 @@ function cardHtml(c, i, key, vote) {
       poster = `<div class="poster-ph" style="background:${g}">${esc(c.t)}</div>`;
     }
     const go = (c.go && c.go.length)
-      ? `<div class="go">${c.go.map(g => `<a href="#" onclick="return false">${esc(g)}</a>`).join("")}</div>`
-      : "";
+      ? `<div class="go"><span class="go-prefix">去哪看：</span>${c.go.map((g, gi) => `${gi ? '<span class="go-sep"> / </span>' : ''}<span class="go-plat">${esc(g)}</span>`).join("")}</div>`
+      : `<div class="go go-empty">暂无核对过的国内正版，先记片名</div>`;
     const reason = flavorReason(c.r);
     return `
       <article class="card" data-key="${esc(key)}">
@@ -2159,7 +2163,7 @@ function renderResult() {
   const banner = m ? m.banner : "";
 
   const cardsHtml = cards.length === 0
-    ? `<div class="empty-state">${esc(hint || "暂无匹配片源")}</div>`
+    ? `<div class="empty-state">${esc(hint || "这个心情还在补片，换个心情试试")}</div>`
     : cards.map((c, i) => {
         const key = state.mood + "-" + state.batch + "-" + i + "-" + c.t;
         return cardHtml(c, i, key, state.votes[key] || priorVote(c.t, state.mood));
